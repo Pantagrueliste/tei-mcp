@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-03-14T21:37:26.547Z"
-last_activity: 2026-03-14 -- Completed 01-02 parser, store, and server
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-14T22:31:37.859Z"
+last_activity: 2026-03-14 -- Completed 02-01 store query methods
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-14)
 
 **Core value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting -- so it produces correct TEI markup without hallucinating the spec.
-**Current focus:** Phase 1: Foundation
+**Current focus:** Phase 2: Basic Lookups and Search
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase 1 Complete
-Last activity: 2026-03-14 -- Completed 01-02 parser, store, and server
+Phase: 2 of 4 (Basic Lookups and Search)
+Plan: 1 of 2 in current phase
+Status: Executing Phase 2
+Last activity: 2026-03-14 -- Completed 02-01 store query methods
 
-Progress: [██████████] 100%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [██████████] 100%
 
 *Updated after each plan completion*
 | Phase 01 P02 | 3min | 2 tasks | 5 files |
+| Phase 02 P01 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - [01-02]: Used full namespace URI for xml:lang attribute filtering (ElementTree XPath cannot resolve xml: prefix in predicates)
 - [01-02]: Lifespan uses @lifespan decorator from fastmcp.server.lifespan (confirmed FastMCP 3.1.x API)
 - [01-02]: Logging configured to stderr as first action in server.py before any other imports
+- [02-01]: Reverse indexes built eagerly in __init__ for O(1) access
+- [02-01]: Search checks ident > gloss > desc in priority order, stops at first match per entity
+- [02-01]: suggest_names uses difflib.get_close_matches with cutoff=0.4 on lowercased names
 
 ### Pending Todos
 
@@ -80,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T21:37:26.544Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-03-14T22:31:37.856Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

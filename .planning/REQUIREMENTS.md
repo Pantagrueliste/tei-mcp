@@ -16,15 +16,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Lookup
 
-- [ ] **LOOK-01**: User can look up an element by name and get its ident, module, gloss, class memberships, local attributes, and raw content model
-- [ ] **LOOK-02**: User can look up a class by name and get its ident, type (model/atts), description, members, and superclasses
-- [ ] **LOOK-03**: User can look up a macro by name and get its ident, description, and content
-- [ ] **LOOK-04**: User can list all elements belonging to a given module
+- [x] **LOOK-01**: User can look up an element by name and get its ident, module, gloss, class memberships, local attributes, and raw content model
+- [x] **LOOK-02**: User can look up a class by name and get its ident, type (model/atts), description, members, and superclasses
+- [x] **LOOK-03**: User can look up a macro by name and get its ident, description, and content
+- [x] **LOOK-04**: User can list all elements belonging to a given module
 
 ### Search
 
-- [ ] **SRCH-01**: User can search across element/class/macro names, glosses, and descriptions using regex patterns
-- [ ] **SRCH-02**: Search results return structured JSON with matched entity type, ident, and gloss
+- [x] **SRCH-01**: User can search across element/class/macro names, glosses, and descriptions using regex patterns
+- [x] **SRCH-02**: Search results return structured JSON with matched entity type, ident, and gloss
 
 ### Attributes
 
@@ -90,12 +90,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BOOT-02 | Phase 1 | Complete |
 | BOOT-03 | Phase 1 | Complete |
 | BOOT-04 | Phase 1 | Complete |
-| LOOK-01 | Phase 2 | Pending |
-| LOOK-02 | Phase 2 | Pending |
-| LOOK-03 | Phase 2 | Pending |
-| LOOK-04 | Phase 2 | Pending |
-| SRCH-01 | Phase 2 | Pending |
-| SRCH-02 | Phase 2 | Pending |
+| LOOK-01 | Phase 2 | Complete |
+| LOOK-02 | Phase 2 | Complete |
+| LOOK-03 | Phase 2 | Complete |
+| LOOK-04 | Phase 2 | Complete |
+| SRCH-01 | Phase 2 | Complete |
+| SRCH-02 | Phase 2 | Complete |
 | ATTR-01 | Phase 3 | Pending |
 | ATTR-02 | Phase 3 | Pending |
 | ATTR-03 | Phase 3 | Pending |
