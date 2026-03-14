@@ -28,9 +28,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Attributes
 
-- [ ] **ATTR-01**: User can list all attributes for an element including those inherited from the att.* class hierarchy
-- [ ] **ATTR-02**: Each attribute includes its allowed values, datatypes, and constraints (closed value lists, teidata.* types)
-- [ ] **ATTR-03**: User can see which attribute class each inherited attribute comes from
+- [x] **ATTR-01**: User can list all attributes for an element including those inherited from the att.* class hierarchy
+- [x] **ATTR-02**: Each attribute includes its allowed values, datatypes, and constraints (closed value lists, teidata.* types)
+- [x] **ATTR-03**: User can see which attribute class each inherited attribute comes from
 
 ### Content Models
 
@@ -46,7 +46,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Class Hierarchy
 
-- [ ] **HIER-01**: User can see the full class membership chain for an element (e.g., persName → model.nameLike.agent → model.nameLike → model.phraseSeq)
+- [x] **HIER-01**: User can see the full class membership chain for an element (e.g., persName → model.nameLike.agent → model.nameLike → model.phraseSeq)
 
 ### Cross-Cutting
 
@@ -96,16 +96,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LOOK-04 | Phase 2 | Complete |
 | SRCH-01 | Phase 2 | Complete |
 | SRCH-02 | Phase 2 | Complete |
-| ATTR-01 | Phase 3 | Pending |
-| ATTR-02 | Phase 3 | Pending |
-| ATTR-03 | Phase 3 | Pending |
+| ATTR-01 | Phase 3 | Complete |
+| ATTR-02 | Phase 3 | Complete |
+| ATTR-03 | Phase 3 | Complete |
 | CMOD-01 | Phase 4 | Pending |
 | CMOD-02 | Phase 4 | Pending |
 | CMOD-03 | Phase 4 | Pending |
 | NEST-01 | Phase 4 | Pending |
 | NEST-02 | Phase 4 | Pending |
 | NEST-03 | Phase 4 | Pending |
-| HIER-01 | Phase 3 | Pending |
+| HIER-01 | Phase 3 | Complete |
 | XCUT-01 | Phase 1 | Complete |
 | XCUT-02 | Phase 1 | Complete |
 | XCUT-03 | Phase 1 | Complete |

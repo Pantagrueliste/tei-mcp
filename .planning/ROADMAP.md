@@ -13,7 +13,7 @@ This roadmap delivers a read-only MCP server that exposes the TEI P5 ODD specifi
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Project scaffold, ODD parser, in-memory data model, and MCP server shell (completed 2026-03-14)
-- [ ] **Phase 2: Basic Lookups and Search** - Element, class, macro, and module lookup tools plus regex search
+- [x] **Phase 2: Basic Lookups and Search** - Element, class, macro, and module lookup tools plus regex search (completed 2026-03-14)
 - [ ] **Phase 3: Attribute Resolution and Class Hierarchy** - Full inherited attribute listing and class membership chain traversal
 - [ ] **Phase 4: Content Models and Nesting Validation** - Content model expansion and parent-child nesting checks
 
@@ -60,11 +60,11 @@ Plans:
   2. Each attribute in the response includes its allowed values, datatype, and whether the value list is closed or open
   3. Each inherited attribute shows which att.* class it comes from (e.g., "xml:id from att.global")
   4. User can call class_membership_chain for an element and see the full hierarchy (e.g., persName -> model.nameLike.agent -> model.nameLike -> model.phrase)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — AttDef data model, parser enrichment, resolve_attributes and get_class_chain store methods
+- [ ] 03-02-PLAN.md — list_attributes and class_membership_chain MCP tool registrations
 
 ### Phase 4: Content Models and Nesting Validation
 **Goal**: An LLM can expand content models to concrete elements and check whether one element can nest inside another
@@ -90,6 +90,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/2 | Complete    | 2026-03-14 |
-| 2. Basic Lookups and Search | 0/2 | Not started | - |
-| 3. Attribute Resolution and Class Hierarchy | 0/0 | Not started | - |
+| 2. Basic Lookups and Search | 0/2 | Complete    | 2026-03-14 |
+| 3. Attribute Resolution and Class Hierarchy | 0/2 | Not started | - |
 | 4. Content Models and Nesting Validation | 0/0 | Not started | - |
