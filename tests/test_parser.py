@@ -17,14 +17,14 @@ def test_parse_odd_returns_oddstore(test_odd_path: Path):
 
 
 def test_parse_odd_entity_counts(test_odd_path: Path):
-    """parse_odd produces correct counts: 3 elements, 4 classes, 1 macro, 2 modules."""
+    """parse_odd produces correct counts for enriched fixture."""
     from tei_mcp.parser import parse_odd
 
     store = parse_odd(test_odd_path)
-    assert store.element_count == 3
-    assert store.class_count == 4  # model.pLike, att.global, att.naming, att.canonical
+    assert store.element_count == 12
+    assert store.class_count == 13
     assert store.macro_count == 1
-    assert store.module_count == 2
+    assert store.module_count == 4
 
 
 def test_element_p_fields(test_odd_path: Path):

@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Project scaffold, ODD parser, in-memory data model, and MCP server shell (completed 2026-03-14)
 - [x] **Phase 2: Basic Lookups and Search** - Element, class, macro, and module lookup tools plus regex search (completed 2026-03-14)
-- [ ] **Phase 3: Attribute Resolution and Class Hierarchy** - Full inherited attribute listing and class membership chain traversal
+- [x] **Phase 3: Attribute Resolution and Class Hierarchy** - Full inherited attribute listing and class membership chain traversal (completed 2026-03-14)
 - [ ] **Phase 4: Content Models and Nesting Validation** - Content model expansion and parent-child nesting checks
 
 ## Phase Details
@@ -76,11 +76,11 @@ Plans:
   3. Macro references within content models are recursively resolved to their underlying content
   4. User can call check_nesting("p", "div") and get a YES/NO answer for direct parent-child validity
   5. User can call check_nesting_recursive("persName", "body") and get a YES/NO answer for whether persName can appear anywhere inside body, with cycle detection preventing infinite loops
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — Content model expansion engine: fixture enrichment, tree builder, classRef/macroRef resolution
+- [ ] 04-02-PLAN.md — Nesting validation (direct + recursive) and MCP tool wiring for expand_content_model and check_nesting
 
 ## Progress
 
@@ -91,5 +91,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/2 | Complete    | 2026-03-14 |
 | 2. Basic Lookups and Search | 0/2 | Complete    | 2026-03-14 |
-| 3. Attribute Resolution and Class Hierarchy | 0/2 | Not started | - |
-| 4. Content Models and Nesting Validation | 0/0 | Not started | - |
+| 3. Attribute Resolution and Class Hierarchy | 0/2 | Complete    | 2026-03-14 |
+| 4. Content Models and Nesting Validation | 0/2 | Not started | - |

@@ -62,7 +62,10 @@ def test_get_class_members(parsed_store):
     members = parsed_store.get_class_members("att.global")
     assert isinstance(members, list)
     # p, persName, div all have memberOf key="att.global"
-    assert sorted(members) == ["div", "p", "persName"]
+    assert "p" in members
+    assert "persName" in members
+    assert "div" in members
+    assert len(members) == 12  # all elements with att.global
 
 
 def test_get_class_members_with_subclass(parsed_store):
@@ -75,7 +78,7 @@ def test_get_module_elements(parsed_store):
     """core module returns ElementDef objects for elements with module='core'."""
     elems = parsed_store.get_module_elements("core")
     assert isinstance(elems, list)
-    assert len(elems) == 1  # only 'p' has module="core"
+    assert len(elems) == 5  # p, head, hi, note, gap have module="core"
     assert all(isinstance(e, ElementDef) for e in elems)
     assert elems[0].ident == "p"
 
@@ -277,8 +280,8 @@ def test_get_class_chain_persname(parsed_store):
     assert result["entity"] == "persName"
     chains = result["chains"]
     # persName has 3 direct classes: model.nameLike.agent, att.global, att.naming
-    # model.nameLike.agent won't resolve (not in fixture), so we get att.global and att.naming
     chain_starts = [c[0]["ident"] for c in chains]
+    assert "model.nameLike.agent" in chain_starts
     assert "att.global" in chain_starts
     assert "att.naming" in chain_starts
 
@@ -319,3 +322,125 @@ def test_get_class_chain_cycle_detection(parsed_store):
     assert "error" not in result
     # att.global has no superclasses, so chains should be empty
     assert result["chains"] == []
+
+
+# --- Content model expansion tests ---
+
+
+def test_expand_content_model_classref(parsed_store):
+    """expand_content_model('div') returns tree with classRef nodes listing concrete elements."""
+    result = parsed_store.expand_content_model("div")
+    assert "error" not in result
+    assert result["name"] == "div"
+    # Root is a sequence
+    assert result["type"] == "sequence"
+
+    # Find classRef nodes in the tree (they should have 'class' and 'elements' fields)
+    def find_classrefs(node):
+        found = []
+        if node.get("type") == "classRef":
+            found.append(node)
+        for child in node.get("children", []):
+            found.extend(find_classrefs(child))
+        return found
+
+    classrefs = find_classrefs(result)
+    assert len(classrefs) > 0
+    for cr in classrefs:
+        assert "class" in cr
+        assert "elements" in cr
+        for elem in cr["elements"]:
+            assert "name" in elem
+            assert "via" in elem
+
+
+def test_expand_preserves_structure(parsed_store):
+    """expand_content_model('div') tree has nested sequence/alternation nodes with min/max."""
+    result = parsed_store.expand_content_model("div")
+    assert result["type"] == "sequence"
+    assert "min" in result
+    assert "max" in result
+    # Should have children with nested structure (not flat element lists)
+    assert "children" in result
+    assert len(result["children"]) > 0
+    # Check nested alternation exists somewhere
+    def find_types(node, types=None):
+        if types is None:
+            types = set()
+        types.add(node.get("type"))
+        for child in node.get("children", []):
+            find_types(child, types)
+        return types
+
+    types = find_types(result)
+    assert "sequence" in types
+    assert "alternation" in types
+    assert "classRef" in types
+
+
+def test_expand_macro_resolution(parsed_store):
+    """expand_content_model('p') resolves macroRef to macro.paraContent inline."""
+    result = parsed_store.expand_content_model("p")
+    assert "error" not in result
+    assert result["name"] == "p"
+    # p's content is macroRef macro.paraContent, which should be resolved
+    # to the alternation tree from the macro. No macroRef node should remain.
+    def has_macro_ref(node):
+        if node.get("type") == "macroRef":
+            return True
+        for child in node.get("children", []):
+            if has_macro_ref(child):
+                return True
+        return False
+
+    assert not has_macro_ref(result), "macroRef should be resolved inline"
+    # The resolved content should be an alternation (from macro.paraContent)
+    assert result["type"] == "alternation"
+
+
+def test_expand_macro_direct(parsed_store):
+    """expand_content_model('macro.paraContent') works on macro names directly."""
+    result = parsed_store.expand_content_model("macro.paraContent")
+    assert "error" not in result
+    assert result["name"] == "macro.paraContent"
+    # macro.paraContent is an alternation with textNode and classRefs
+    assert result["type"] == "alternation"
+
+
+def test_expand_empty_content(parsed_store):
+    """expand_content_model('gap') returns {'type': 'empty'} for elements with empty content."""
+    result = parsed_store.expand_content_model("gap")
+    assert "error" not in result
+    assert result["name"] == "gap"
+    assert result["type"] == "empty"
+
+
+def test_expand_text_node(parsed_store):
+    """persName's content includes a text node in its alternation children."""
+    result = parsed_store.expand_content_model("persName")
+    assert result["type"] == "alternation"
+    text_nodes = [c for c in result.get("children", []) if c.get("type") == "text"]
+    assert len(text_nodes) > 0
+
+
+def test_expand_not_found(parsed_store):
+    """expand_content_model('nonexistent') returns error dict with suggestions."""
+    result = parsed_store.expand_content_model("nonexistent")
+    assert "error" in result
+    assert "suggestions" in result
+
+
+def test_expand_case_insensitive(parsed_store):
+    """expand_content_model('DIV') works case-insensitively."""
+    result = parsed_store.expand_content_model("DIV")
+    assert "error" not in result
+    assert result["name"] == "div"
+
+
+def test_expand_dataref(parsed_store):
+    """expand_content_model for element with dataRef returns dataRef node."""
+    result = parsed_store.expand_content_model("gi")
+    assert "error" not in result
+    assert result["name"] == "gi"
+    assert result["type"] == "dataRef"
+    assert result["key"] == "teidata.name"
