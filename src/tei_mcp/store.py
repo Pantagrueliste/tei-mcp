@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import difflib
 import re
+from collections import deque
 from typing import TypeVar
 
-from tei_mcp.models import ClassDef, ElementDef, MacroDef, ModuleDef
+from tei_mcp.models import AttDef, ClassDef, ElementDef, MacroDef, ModuleDef
 
 T = TypeVar("T")
 
@@ -200,3 +201,134 @@ class OddStore:
             query.lower(), lower_names, n=max_suggestions, cutoff=0.4
         )
         return [lower_to_original[m] for m in matches]
+
+    # --- Attribute resolution ---
+
+    def resolve_attributes(self, name: str) -> dict:
+        """Resolve all attributes (local + inherited) for an element or class.
+
+        Returns a dict with 'element' (entity ident) and 'attributes' (flat list).
+        Local attributes appear first with source='local', then inherited in BFS order.
+        If a local attribute overrides an inherited one, an 'overrides' field is added.
+        """
+        entity = self.get_element_ci(name) or self.get_class_ci(name)
+        if entity is None:
+            suggestions = self.suggest_names(name, "element") or self.suggest_names(
+                name, "class"
+            )
+            return {"error": f"'{name}' not found", "suggestions": suggestions}
+
+        # Local attributes by ident for override detection
+        local_by_ident: dict[str, AttDef] = {a.ident: a for a in entity.attributes}
+
+        # BFS through att.* class hierarchy to collect inherited attributes
+        inherited: list[dict] = []
+        seen_idents: set[str] = set(local_by_ident.keys())
+        visited_classes: set[str] = set()
+        queue: deque[str] = deque()
+
+        for cls_ident in entity.classes:
+            cls_def = self.classes.get(cls_ident)
+            if cls_def is not None and cls_def.class_type == "atts":
+                queue.append(cls_ident)
+
+        while queue:
+            cls_ident = queue.popleft()
+            if cls_ident in visited_classes:
+                continue
+            visited_classes.add(cls_ident)
+
+            cls_def = self.classes.get(cls_ident)
+            if cls_def is None:
+                continue
+
+            for attr in cls_def.attributes:
+                if attr.ident not in seen_idents:
+                    inherited.append(
+                        {
+                            "name": attr.ident,
+                            "source": cls_ident,
+                            "datatype": attr.datatype,
+                            "values": list(attr.values),
+                            "closed": attr.closed,
+                        }
+                    )
+                    seen_idents.add(attr.ident)
+
+            for super_cls in cls_def.classes:
+                super_def = self.classes.get(super_cls)
+                if super_def is not None and super_def.class_type == "atts":
+                    queue.append(super_cls)
+
+        # Build local entries with override detection
+        result_attrs: list[dict] = []
+        for attr in entity.attributes:
+            entry: dict = {
+                "name": attr.ident,
+                "source": "local",
+                "datatype": attr.datatype,
+                "values": list(attr.values),
+                "closed": attr.closed,
+            }
+            # Check if this overrides an inherited attribute
+            for cls_ident in visited_classes:
+                cls_def = self.classes.get(cls_ident)
+                if cls_def and any(a.ident == attr.ident for a in cls_def.attributes):
+                    entry["overrides"] = cls_ident
+                    break
+            result_attrs.append(entry)
+
+        result_attrs.extend(inherited)
+        return {"element": entity.ident, "attributes": result_attrs}
+
+    # --- Class hierarchy chain ---
+
+    def get_class_chain(self, name: str) -> dict:
+        """Return class membership chains for an element or class.
+
+        Each direct class membership produces a separate chain walked to its root.
+        Each chain step includes ident, type, and gloss.
+        """
+        entity = self.get_element_ci(name) or self.get_class_ci(name)
+        if entity is None:
+            suggestions = self.suggest_names(name, "element") or self.suggest_names(
+                name, "class"
+            )
+            return {"error": f"'{name}' not found", "suggestions": suggestions}
+
+        chains: list[list[dict]] = []
+        for cls_ident in entity.classes:
+            cls_def = self.classes.get(cls_ident)
+            if cls_def is None:
+                continue
+            chain: list[dict] = [
+                {
+                    "ident": cls_def.ident,
+                    "type": cls_def.class_type,
+                    "gloss": cls_def.gloss,
+                }
+            ]
+            visited: set[str] = {cls_ident}
+            current = cls_def
+            while current.classes:
+                next_cls = None
+                for super_ident in current.classes:
+                    if super_ident in visited:
+                        continue
+                    super_def = self.classes.get(super_ident)
+                    if super_def is not None:
+                        chain.append(
+                            {
+                                "ident": super_def.ident,
+                                "type": super_def.class_type,
+                                "gloss": super_def.gloss,
+                            }
+                        )
+                        visited.add(super_ident)
+                        next_cls = super_def
+                if next_cls is None:
+                    break
+                current = next_cls
+            chains.append(chain)
+
+        return {"entity": entity.ident, "chains": chains}
