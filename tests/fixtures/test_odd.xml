@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemaSpec xmlns="http://www.tei-c.org/ns/1.0" ident="tei_test" start="TEI">
+
+  <!-- Element Specs -->
+  <elementSpec ident="p" module="core">
+    <gloss xml:lang="en">paragraph</gloss>
+    <gloss xml:lang="de">Absatz</gloss>
+    <desc xml:lang="en">marks paragraphs in prose.</desc>
+    <desc xml:lang="de">bezeichnet Absaetze in Prosa.</desc>
+    <classes>
+      <memberOf key="model.pLike"/>
+      <memberOf key="att.global"/>
+    </classes>
+    <attList>
+      <attDef ident="part" usage="opt">
+        <desc xml:lang="en">specifies whether or not the paragraph is complete.</desc>
+        <valList type="closed">
+          <valItem ident="Y"><desc xml:lang="en">yes</desc></valItem>
+          <valItem ident="N"><desc xml:lang="en">no</desc></valItem>
+          <valItem ident="I"><desc xml:lang="en">initial</desc></valItem>
+          <valItem ident="M"><desc xml:lang="en">medial</desc></valItem>
+          <valItem ident="F"><desc xml:lang="en">final</desc></valItem>
+        </valList>
+      </attDef>
+    </attList>
+    <content>
+      <macroRef key="macro.paraContent"/>
+    </content>
+  </elementSpec>
+
+  <elementSpec ident="persName" module="namesdates">
+    <gloss xml:lang="en">personal name</gloss>
+    <desc xml:lang="en">contains a proper noun or proper-noun phrase referring to a person.</desc>
+    <classes>
+      <memberOf key="model.nameLike.agent"/>
+      <memberOf key="att.global"/>
+    </classes>
+    <attList>
+      <attDef ident="type" usage="opt">
+        <desc xml:lang="en">indicates a more specific type of personal name.</desc>
+      </attDef>
+      <attDef ident="ref" usage="opt">
+        <desc xml:lang="en">provides a reference to a canonical identifier for the person.</desc>
+      </attDef>
+    </attList>
+    <content>
+      <alternate minOccurs="0" maxOccurs="unbounded">
+        <textNode/>
+        <classRef key="model.gLike"/>
+        <elementRef key="surname"/>
+        <elementRef key="forename"/>
+        <elementRef key="roleName"/>
+      </alternate>
+    </content>
+  </elementSpec>
+
+  <elementSpec ident="div" module="textstructure">
+    <gloss xml:lang="en">text division</gloss>
+    <desc xml:lang="en">contains a subdivision of the front, body, or back of a text.</desc>
+    <classes>
+      <memberOf key="model.divLike"/>
+      <memberOf key="att.global"/>
+    </classes>
+    <attList>
+      <attDef ident="type" usage="opt">
+        <desc xml:lang="en">characterizes the element in some sense.</desc>
+      </attDef>
+    </attList>
+    <content>
+      <sequence>
+        <alternate minOccurs="0" maxOccurs="unbounded">
+          <classRef key="model.divTop"/>
+          <classRef key="model.global"/>
+        </alternate>
+        <sequence minOccurs="1" maxOccurs="1">
+          <alternate minOccurs="1" maxOccurs="1">
+            <sequence minOccurs="1" maxOccurs="unbounded">
+              <classRef key="model.divLike"/>
+            </sequence>
+            <sequence minOccurs="1" maxOccurs="unbounded">
+              <classRef key="model.common"/>
+            </sequence>
+          </alternate>
+        </sequence>
+      </sequence>
+    </content>
+  </elementSpec>
+
+  <!-- Class Specs -->
+  <classSpec ident="model.pLike" module="core" type="model">
+    <gloss xml:lang="en">paragraph-like elements</gloss>
+    <desc xml:lang="en">groups paragraph-like elements.</desc>
+    <classes>
+      <memberOf key="model.common"/>
+    </classes>
+  </classSpec>
+
+  <classSpec ident="att.global" module="tei" type="atts">
+    <gloss xml:lang="en">globally-available attributes</gloss>
+    <desc xml:lang="en">provides attributes common to all elements in the TEI encoding scheme.</desc>
+    <classes/>
+    <attList>
+      <attDef ident="xml:id" usage="opt">
+        <desc xml:lang="en">provides a unique identifier for the element.</desc>
+      </attDef>
+      <attDef ident="n" usage="opt">
+        <desc xml:lang="en">gives a number or similar label for an element.</desc>
+      </attDef>
+    </attList>
+  </classSpec>
+
+  <!-- Macro Spec -->
+  <macroSpec ident="macro.paraContent" module="core">
+    <gloss xml:lang="en">paragraph content</gloss>
+    <desc xml:lang="en">defines the content of paragraphs and similar elements.</desc>
+    <content>
+      <alternate minOccurs="0" maxOccurs="unbounded">
+        <textNode/>
+        <classRef key="model.gLike"/>
+        <classRef key="model.phrase"/>
+        <classRef key="model.inter"/>
+        <classRef key="model.global"/>
+      </alternate>
+    </content>
+  </macroSpec>
+
+  <!-- Module Specs -->
+  <moduleSpec ident="core">
+    <gloss xml:lang="en">core module</gloss>
+    <desc xml:lang="en">provides elements available in all TEI documents.</desc>
+  </moduleSpec>
+
+  <moduleSpec ident="namesdates">
+    <gloss xml:lang="en">names and dates</gloss>
+    <desc xml:lang="en">provides elements for names of persons, places, and organizations, and for dates and times.</desc>
+  </moduleSpec>
+
+</schemaSpec>

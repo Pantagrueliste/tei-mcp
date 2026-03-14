@@ -1,0 +1,8 @@
+.planning/
+src/tei_mcp/data/p5subset.xml
+__pycache__/
+*.pyc
+.venv/
+dist/
+*.egg-info/
+.pytest_cache/
