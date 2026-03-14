@@ -1,4 +1,4 @@
-"""Tests for OddStore query methods: case-insensitive lookup, reverse indexes, search, suggestions."""
+"""Tests for OddStore query methods: case-insensitive lookup, reverse indexes, search, suggestions, resolve_attributes, get_class_chain."""
 
 from tei_mcp.models import ElementDef
 
@@ -169,3 +169,153 @@ def test_suggest_names_no_match(parsed_store):
     """Query 'zzzzzzz' returns empty list."""
     suggestions = parsed_store.suggest_names("zzzzzzz", entity_type="element")
     assert suggestions == []
+
+
+# --- resolve_attributes tests ---
+
+
+def test_resolve_attributes_persname_local_first(parsed_store):
+    """resolve_attributes('persName') returns local attrs (type, ref) before inherited."""
+    result = parsed_store.resolve_attributes("persName")
+    assert "error" not in result
+    assert result["element"] == "persName"
+    attrs = result["attributes"]
+    # Local attributes first
+    local_attrs = [a for a in attrs if a["source"] == "local"]
+    assert len(local_attrs) == 2
+    local_names = [a["name"] for a in local_attrs]
+    assert "type" in local_names
+    assert "ref" in local_names
+
+
+def test_resolve_attributes_persname_includes_inherited(parsed_store):
+    """resolve_attributes('persName') includes inherited attrs from att.global and att.naming."""
+    result = parsed_store.resolve_attributes("persName")
+    attrs = result["attributes"]
+    inherited_names = [a["name"] for a in attrs if a["source"] != "local"]
+    # att.global: xml:id, n; att.naming: role
+    # att.canonical: ref is skipped because local ref overrides it
+    assert "xml:id" in inherited_names
+    assert "n" in inherited_names
+    assert "role" in inherited_names
+
+
+def test_resolve_attributes_local_override(parsed_store):
+    """persName's local 'ref' overrides att.canonical's 'ref' and has overrides field."""
+    result = parsed_store.resolve_attributes("persName")
+    attrs = result["attributes"]
+    local_ref = next(a for a in attrs if a["name"] == "ref" and a["source"] == "local")
+    assert local_ref["overrides"] == "att.canonical"
+    # att.canonical's ref should NOT appear as inherited
+    inherited_ref = [a for a in attrs if a["name"] == "ref" and a["source"] != "local"]
+    assert len(inherited_ref) == 0
+
+
+def test_resolve_attributes_has_datatype_and_values(parsed_store):
+    """Each attribute in resolve_attributes has datatype, values, closed fields."""
+    result = parsed_store.resolve_attributes("persName")
+    for attr in result["attributes"]:
+        assert "name" in attr
+        assert "source" in attr
+        assert "datatype" in attr
+        assert "values" in attr
+        assert "closed" in attr
+
+
+def test_resolve_attributes_for_class(parsed_store):
+    """resolve_attributes works for class names (att.global returns its own attrs)."""
+    result = parsed_store.resolve_attributes("att.global")
+    assert "error" not in result
+    assert result["element"] == "att.global"
+    names = [a["name"] for a in result["attributes"]]
+    assert "xml:id" in names
+    assert "n" in names
+
+
+def test_resolve_attributes_not_found(parsed_store):
+    """resolve_attributes for nonexistent name returns error + suggestions."""
+    result = parsed_store.resolve_attributes("nonexistent")
+    assert "error" in result
+    assert "suggestions" in result
+
+
+def test_resolve_attributes_case_insensitive(parsed_store):
+    """resolve_attributes('PERSNAME') works case-insensitively."""
+    result = parsed_store.resolve_attributes("PERSNAME")
+    assert "error" not in result
+    assert result["element"] == "persName"
+
+
+def test_resolve_attributes_no_attributes(parsed_store):
+    """resolve_attributes for element with no local or inherited attrs returns empty list."""
+    # model.pLike has no attributes and its superclass model.common is a model class (not atts)
+    result = parsed_store.resolve_attributes("model.pLike")
+    assert "error" not in result
+    assert result["attributes"] == []
+
+
+def test_resolve_attributes_bfs_ordering(parsed_store):
+    """Inherited attrs appear in BFS order -- att.global before att.naming's superclass attrs."""
+    result = parsed_store.resolve_attributes("persName")
+    attrs = result["attributes"]
+    inherited = [a for a in attrs if a["source"] != "local"]
+    # att.global attrs (xml:id, n) should appear before att.naming's attrs (role)
+    # because both att.global and att.naming are direct memberships, processed in order
+    inherited_names = [a["name"] for a in inherited]
+    xmlid_idx = inherited_names.index("xml:id")
+    role_idx = inherited_names.index("role")
+    assert xmlid_idx < role_idx
+
+
+# --- get_class_chain tests ---
+
+
+def test_get_class_chain_persname(parsed_store):
+    """get_class_chain('persName') returns separate chains for each direct class membership."""
+    result = parsed_store.get_class_chain("persName")
+    assert "error" not in result
+    assert result["entity"] == "persName"
+    chains = result["chains"]
+    # persName has 3 direct classes: model.nameLike.agent, att.global, att.naming
+    # model.nameLike.agent won't resolve (not in fixture), so we get att.global and att.naming
+    chain_starts = [c[0]["ident"] for c in chains]
+    assert "att.global" in chain_starts
+    assert "att.naming" in chain_starts
+
+
+def test_get_class_chain_step_fields(parsed_store):
+    """Each chain step has ident, type, and gloss fields."""
+    result = parsed_store.get_class_chain("persName")
+    for chain in result["chains"]:
+        for step in chain:
+            assert "ident" in step
+            assert "type" in step
+            assert "gloss" in step
+
+
+def test_get_class_chain_att_naming(parsed_store):
+    """get_class_chain('att.naming') returns chain through att.canonical."""
+    result = parsed_store.get_class_chain("att.naming")
+    assert "error" not in result
+    chains = result["chains"]
+    assert len(chains) >= 1
+    # att.naming -> att.canonical
+    att_canonical_chain = next(c for c in chains if c[0]["ident"] == "att.canonical")
+    assert att_canonical_chain[0]["type"] == "atts"
+
+
+def test_get_class_chain_not_found(parsed_store):
+    """get_class_chain for nonexistent name returns error + suggestions."""
+    result = parsed_store.get_class_chain("nonexistent")
+    assert "error" in result
+    assert "suggestions" in result
+
+
+def test_get_class_chain_cycle_detection(parsed_store):
+    """get_class_chain handles potential cycles without infinite loops."""
+    # Even though our fixture has no cycles, the method should complete quickly
+    # for any entity without hanging. Just verify it returns a result.
+    result = parsed_store.get_class_chain("att.global")
+    assert "error" not in result
+    # att.global has no superclasses, so chains should be empty
+    assert result["chains"] == []
