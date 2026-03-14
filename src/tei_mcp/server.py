@@ -11,11 +11,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("tei-mcp")
 
-from fastmcp import FastMCP  # noqa: E402
+from dataclasses import asdict  # noqa: E402
+
+from fastmcp import Context, FastMCP  # noqa: E402
 from fastmcp.server.lifespan import lifespan  # noqa: E402
 
 from tei_mcp.download import ensure_odd_file  # noqa: E402
 from tei_mcp.parser import parse_odd  # noqa: E402
+from tei_mcp.store import OddStore  # noqa: E402
 
 
 @lifespan
@@ -39,7 +42,103 @@ async def app_lifespan(server):
 
 mcp = FastMCP("tei-mcp", lifespan=app_lifespan)
 
-# Tools will be added in Phase 2+
+@mcp.tool()
+async def lookup_element(name: str, ctx: Context) -> dict:
+    """Look up a TEI element by name (case-insensitive).
+
+    Returns the element's ident, module, gloss, desc, classes, attributes,
+    and content_raw. If not found, returns an error with suggestions.
+
+    Example: lookup_element("persName")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    elem = store.get_element_ci(name)
+    if elem is None:
+        return {
+            "error": f"Element '{name}' not found",
+            "suggestions": store.suggest_names(name, "element"),
+        }
+    return asdict(elem)
+
+
+@mcp.tool()
+async def lookup_class(name: str, ctx: Context) -> dict:
+    """Look up a TEI class by name (case-insensitive).
+
+    Returns the class's ident, module, class_type, gloss, desc, classes,
+    attributes, and a computed members list of element/subclass idents.
+    If not found, returns an error with suggestions.
+
+    Example: lookup_class("att.global")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    cls_def = store.get_class_ci(name)
+    if cls_def is None:
+        return {
+            "error": f"Class '{name}' not found",
+            "suggestions": store.suggest_names(name, "class"),
+        }
+    result = asdict(cls_def)
+    result["members"] = store.get_class_members(cls_def.ident)
+    return result
+
+
+@mcp.tool()
+async def lookup_macro(name: str, ctx: Context) -> dict:
+    """Look up a TEI macro by name (case-insensitive).
+
+    Returns the macro's ident, module, gloss, desc, and content_raw.
+    If not found, returns an error with suggestions.
+
+    Example: lookup_macro("macro.paraContent")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    macro_def = store.get_macro_ci(name)
+    if macro_def is None:
+        return {
+            "error": f"Macro '{name}' not found",
+            "suggestions": store.suggest_names(name, "macro"),
+        }
+    return asdict(macro_def)
+
+
+@mcp.tool()
+async def list_module_elements(module: str, ctx: Context) -> dict:
+    """List all elements in a TEI module.
+
+    Returns the module's ident, gloss, and a list of {ident, gloss} pairs
+    for each element. If module not found, returns an error with suggestions.
+
+    Example: list_module_elements("namesdates")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    mod_def = store.get_module_ci(module)
+    if mod_def is None:
+        return {
+            "error": f"Module '{module}' not found",
+            "suggestions": store.suggest_names(module, "module"),
+        }
+    elements = store.get_module_elements(mod_def.ident)
+    element_list = [{"ident": e.ident, "gloss": e.gloss} for e in elements]
+    return {"module": mod_def.ident, "gloss": mod_def.gloss, "elements": element_list}
+
+
+@mcp.tool()
+async def search(
+    pattern: str,
+    entity_type: str | None = None,
+    max_results: int = 50,
+    ctx: Context = None,
+) -> list[dict] | dict:
+    """Search TEI entities by regex pattern across ident, gloss, and desc.
+
+    Each result includes type, ident, gloss, and match_field (which field
+    matched). Optionally filter by entity_type and limit results.
+
+    Example: search("pers.*Name")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.search(pattern, entity_type, max_results)
 
 
 def main():
