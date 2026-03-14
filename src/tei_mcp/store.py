@@ -488,6 +488,127 @@ class OddStore:
 
         return results
 
+    # --- Nesting validation ---
+
+    def check_nesting(
+        self, child: str, parent: str, recursive: bool = False
+    ) -> dict:
+        """Check whether *child* can appear inside *parent*.
+
+        Direct mode (default) checks immediate parent-child validity.
+        Recursive mode checks if *child* is reachable anywhere inside *ancestor*
+        via BFS with cycle detection and path tracking.
+        """
+        child_elem = self.get_element_ci(child)
+        if child_elem is None:
+            return {
+                "error": f"Child element '{child}' not found",
+                "suggestions": self.suggest_names(child, "element"),
+            }
+        parent_elem = self.get_element_ci(parent)
+        if parent_elem is None:
+            return {
+                "error": f"Parent element '{parent}' not found",
+                "suggestions": self.suggest_names(parent, "element"),
+            }
+
+        child_ident = child_elem.ident
+        parent_ident = parent_elem.ident
+
+        if recursive:
+            return self._check_nesting_recursive(child_ident, parent_ident)
+        return self._check_nesting_direct(child_ident, parent_ident)
+
+    def _check_nesting_direct(self, child: str, parent: str) -> dict:
+        """Check if *child* is a valid direct child of *parent*."""
+        children = self._collect_direct_children(parent)
+
+        if _ANY in children:
+            return {
+                "valid": True,
+                "child": child,
+                "parent": parent,
+                "reason": f"'{parent}' allows any element (anyElement in content model)",
+            }
+
+        if child in children:
+            # Try to find which classRef the child came through for a richer reason
+            via_class = self._find_class_for_child(parent, child)
+            if via_class:
+                return {
+                    "valid": True,
+                    "child": child,
+                    "parent": parent,
+                    "reason": f"'{child}' is allowed as direct child of '{parent}' via classRef {via_class}",
+                }
+            return {
+                "valid": True,
+                "child": child,
+                "parent": parent,
+                "reason": f"'{child}' is allowed as direct child of '{parent}'",
+            }
+
+        return {
+            "valid": False,
+            "child": child,
+            "parent": parent,
+            "reason": f"'{child}' is not in '{parent}' content model",
+        }
+
+    def _find_class_for_child(self, parent: str, child: str) -> str | None:
+        """Walk the content tree to find which classRef contains *child*."""
+        elem = self.elements.get(parent)
+        if elem is None:
+            return None
+        tree = self._parse_content_tree(elem.content_raw)
+        return self._walk_tree_for_class(tree, child)
+
+    def _walk_tree_for_class(self, node: dict, child: str) -> str | None:
+        """Recursively search content tree for a classRef whose elements include *child*."""
+        if node.get("type") == "classRef":
+            for elem in node.get("elements", []):
+                if elem["name"] == child:
+                    return node["class"]
+            return None
+        for c in node.get("children", []):
+            result = self._walk_tree_for_class(c, child)
+            if result is not None:
+                return result
+        return None
+
+    def _check_nesting_recursive(self, child: str, ancestor: str) -> dict:
+        """BFS to check if *child* is reachable inside *ancestor*."""
+        queue: deque[tuple[str, list[str]]] = deque([(ancestor, [ancestor])])
+        visited: set[str] = {ancestor}
+
+        while queue:
+            current, path = queue.popleft()
+            direct_children = self._collect_direct_children(current)
+
+            if _ANY in direct_children or child in direct_children:
+                return {
+                    "reachable": True,
+                    "child": child,
+                    "ancestor": ancestor,
+                    "path": path + [child],
+                    "reason": f"'{child}' reachable inside '{ancestor}' via {' > '.join(path + [child])}",
+                }
+
+            for elem_name in direct_children:
+                if elem_name == _ANY:
+                    continue
+                if elem_name not in visited and elem_name in self.elements:
+                    visited.add(elem_name)
+                    queue.append((elem_name, path + [elem_name]))
+
+        return {
+            "reachable": False,
+            "child": child,
+            "ancestor": ancestor,
+            "path": [],
+            "reason": f"'{child}' is not reachable inside '{ancestor}'",
+        }
+
     def _collect_direct_children(self, name: str) -> set[str]:
         """Collect the set of element idents that can appear as direct children."""
         elem = self.elements.get(name)
