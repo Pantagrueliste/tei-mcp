@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import difflib
 import re
+import xml.etree.ElementTree as ET
 from collections import deque
 from typing import TypeVar
 
 from tei_mcp.models import AttDef, ClassDef, ElementDef, MacroDef, ModuleDef
+
+_ANY = "*"
 
 T = TypeVar("T")
 
@@ -332,3 +335,179 @@ class OddStore:
             chains.append(chain)
 
         return {"entity": entity.ident, "chains": chains}
+
+    # --- Content model expansion ---
+
+    def expand_content_model(self, name: str) -> dict:
+        """Expand a content model for an element or macro into a structured JSON tree.
+
+        Returns a dict tree with sequence, alternation, classRef, element, text,
+        empty, dataRef, and anyElement node types. ClassRef nodes include resolved
+        concrete element lists. MacroRef nodes are resolved inline.
+        """
+        elem = self.get_element_ci(name)
+        if elem is not None:
+            tree = self._parse_content_tree(elem.content_raw)
+            tree["name"] = elem.ident
+            return tree
+
+        macro = self.get_macro_ci(name)
+        if macro is not None:
+            tree = self._parse_content_tree(macro.content_raw)
+            tree["name"] = macro.ident
+            return tree
+
+        suggestions = self.suggest_names(name, "element") + self.suggest_names(
+            name, "macro"
+        )
+        return {"error": f"'{name}' not found", "suggestions": suggestions}
+
+    def _parse_content_tree(
+        self, xml_str: str, visited_macros: set[str] | None = None
+    ) -> dict:
+        """Parse a content XML string into a structured dict tree."""
+        if not xml_str:
+            return {"type": "empty"}
+
+        if visited_macros is None:
+            visited_macros = set()
+
+        root = ET.fromstring(xml_str)
+        children = list(root)
+
+        if len(children) == 0:
+            # Check if root itself is <empty/>
+            tag = root.tag.split("}")[1] if "}" in root.tag else root.tag
+            if tag == "empty":
+                return {"type": "empty"}
+            return {"type": "empty"}
+
+        if len(children) == 1:
+            return self._parse_node(children[0], visited_macros)
+
+        # Multiple children: wrap in implicit sequence
+        return {
+            "type": "sequence",
+            "min": 1,
+            "max": 1,
+            "children": [self._parse_node(c, visited_macros) for c in children],
+        }
+
+    def _parse_node(self, el: ET.Element, visited_macros: set[str]) -> dict:
+        """Parse a single XML element node into a content model dict."""
+        tag = el.tag.split("}")[1] if "}" in el.tag else el.tag
+
+        min_val = int(el.get("minOccurs", "1"))
+        max_raw = el.get("maxOccurs", "1")
+        max_val: int | str = "unbounded" if max_raw == "unbounded" else int(max_raw)
+
+        if tag == "sequence":
+            return {
+                "type": "sequence",
+                "min": min_val,
+                "max": max_val,
+                "children": [self._parse_node(c, visited_macros) for c in el],
+            }
+
+        if tag == "alternate":
+            return {
+                "type": "alternation",
+                "min": min_val,
+                "max": max_val,
+                "children": [self._parse_node(c, visited_macros) for c in el],
+            }
+
+        if tag == "elementRef":
+            return {
+                "type": "element",
+                "name": el.get("key", ""),
+                "min": min_val,
+                "max": max_val,
+            }
+
+        if tag == "classRef":
+            class_name = el.get("key", "")
+            return {
+                "type": "classRef",
+                "class": class_name,
+                "min": min_val,
+                "max": max_val,
+                "elements": self._resolve_class_to_elements(class_name),
+            }
+
+        if tag == "macroRef":
+            macro_name = el.get("key", "")
+            if macro_name in visited_macros:
+                return {"type": "error", "message": f"Circular macro reference: {macro_name}"}
+            macro = self.get_macro(macro_name)
+            if macro is None:
+                return {"type": "error", "message": f"Macro not found: {macro_name}"}
+            visited_macros.add(macro_name)
+            return self._parse_content_tree(macro.content_raw, visited_macros)
+
+        if tag == "textNode":
+            return {"type": "text"}
+
+        if tag == "empty":
+            return {"type": "empty"}
+
+        if tag == "dataRef":
+            return {
+                "type": "dataRef",
+                "key": el.get("key", el.get("name", "")),
+                "min": min_val,
+                "max": max_val,
+            }
+
+        if tag == "anyElement":
+            return {
+                "type": "anyElement",
+                "min": min_val,
+                "max": max_val,
+            }
+
+        return {"type": "unknown", "tag": tag}
+
+    def _resolve_class_to_elements(self, class_name: str) -> list[dict]:
+        """Resolve a class name to concrete elements via BFS through subclasses."""
+        results: list[dict] = []
+        visited: set[str] = set()
+        queue: deque[tuple[str, str]] = deque([(class_name, class_name)])
+
+        while queue:
+            cls, via = queue.popleft()
+            if cls in visited:
+                continue
+            visited.add(cls)
+
+            for member in self.get_class_members(cls):
+                if member in self.elements:
+                    results.append({"name": member, "via": via})
+                elif member in self.classes:
+                    queue.append((member, via))
+
+        return results
+
+    def _collect_direct_children(self, name: str) -> set[str]:
+        """Collect the set of element idents that can appear as direct children."""
+        elem = self.elements.get(name)
+        if elem is None:
+            return set()
+        tree = self._parse_content_tree(elem.content_raw)
+        result: set[str] = set()
+        self._collect_elements_from_tree(tree, result)
+        return result
+
+    def _collect_elements_from_tree(self, node: dict, result: set[str]) -> None:
+        """Walk a content model tree and collect element names into result set."""
+        node_type = node.get("type")
+        if node_type == "element":
+            result.add(node["name"])
+        elif node_type == "classRef":
+            for elem in node.get("elements", []):
+                result.add(elem["name"])
+        elif node_type == "anyElement":
+            result.add(_ANY)
+        elif node_type in ("sequence", "alternation"):
+            for child in node.get("children", []):
+                self._collect_elements_from_tree(child, result)
