@@ -34,9 +34,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Content Models
 
-- [ ] **CMOD-01**: User can expand an element's content model with class references resolved to concrete elements
-- [ ] **CMOD-02**: Expansion preserves structural semantics (sequence, alternation, repetition) not just flat element lists
-- [ ] **CMOD-03**: Macro references in content models are recursively resolved
+- [x] **CMOD-01**: User can expand an element's content model with class references resolved to concrete elements
+- [x] **CMOD-02**: Expansion preserves structural semantics (sequence, alternation, repetition) not just flat element lists
+- [x] **CMOD-03**: Macro references in content models are recursively resolved
 
 ### Nesting Validation
 
@@ -99,9 +99,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ATTR-01 | Phase 3 | Complete |
 | ATTR-02 | Phase 3 | Complete |
 | ATTR-03 | Phase 3 | Complete |
-| CMOD-01 | Phase 4 | Pending |
-| CMOD-02 | Phase 4 | Pending |
-| CMOD-03 | Phase 4 | Pending |
+| CMOD-01 | Phase 4 | Complete |
+| CMOD-02 | Phase 4 | Complete |
+| CMOD-03 | Phase 4 | Complete |
 | NEST-01 | Phase 4 | Pending |
 | NEST-02 | Phase 4 | Pending |
 | NEST-03 | Phase 4 | Pending |

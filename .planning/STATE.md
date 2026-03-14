@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 03-02 MCP tools for attribute resolution and class hierarchy
-last_updated: "2026-03-14T23:21:26.444Z"
-last_activity: 2026-03-14 -- Completed 03-01 attribute resolution core
+status: in-progress
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-14T23:52:52Z"
+last_activity: 2026-03-14 -- Completed 04-01 content model expansion engine
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_plans: 8
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-14)
 
 **Core value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting -- so it produces correct TEI markup without hallucinating the spec.
-**Current focus:** Phase 3 Complete -- Attribute Resolution and Class Hierarchy
+**Current focus:** Phase 4 -- Content Models and Nesting Validation
 
 ## Current Position
 
-Phase: 3 of 4 (Attribute Resolution and Class Hierarchy) -- COMPLETE
-Plan: 2 of 2 in current phase -- COMPLETE
-Status: Phase 3 complete, Phase 4 pending
-Last activity: 2026-03-14 -- Completed 03-02 MCP tools for attribute resolution and class hierarchy
+Phase: 4 of 4 (Content Models and Nesting Validation)
+Plan: 1 of 2 in current phase -- COMPLETE
+Status: 04-01 complete, 04-02 pending
+Last activity: 2026-03-14 -- Completed 04-01 content model expansion engine
 
-Progress: [██████████] 100%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [██████████] 100%
 | Phase 02 P02 | 1min | 2 tasks | 2 files |
 | Phase 03 P01 | 5min | 2 tasks | 8 files |
 | Phase 03 P02 | 2min | 1 tasks | 2 files |
+| Phase 04 P01 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [03-01]: Override detection scans visited att.* classes for matching local attr idents after BFS
 - [03-01]: get_class_chain walks linearly per superclass; multiple superclasses each start own chain
 - [Phase 03]: Thin wrapper pattern: MCP tools delegate entirely to store methods with no additional logic
+- [04-01]: MacroRef nodes resolved inline (replaced by macro content tree) rather than kept as references
+- [04-01]: ClassRef via field tracks the class where the member was found for useful provenance
+- [04-01]: Sentinel _ANY='*' used for anyElement in _collect_direct_children
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T23:21:26.440Z
-Stopped at: Completed 03-02 MCP tools for attribute resolution and class hierarchy
-Resume file: None
+Last session: 2026-03-14T23:52:52Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-content-models-and-nesting-validation/04-01-SUMMARY.md
