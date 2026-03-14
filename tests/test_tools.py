@@ -22,7 +22,9 @@ def ctx(parsed_store):
 # Import tool functions -- they are module-level async functions in server.py
 # ---------------------------------------------------------------------------
 from tei_mcp.server import (  # noqa: E402
+    check_nesting,
     class_membership_chain,
+    expand_content_model,
     list_attributes,
     list_module_elements,
     lookup_class,
@@ -270,3 +272,70 @@ async def test_class_membership_chain_class_name(ctx):
     # att.naming should have a chain through att.canonical
     all_idents = [step["ident"] for chain in result["chains"] for step in chain]
     assert "att.canonical" in all_idents
+
+
+# ---------------------------------------------------------------------------
+# expand_content_model
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_expand_content_model_tool(ctx):
+    """expand_content_model returns structured tree with type field."""
+    result = await expand_content_model("div", ctx)
+    assert isinstance(result, dict)
+    assert "name" in result
+    assert result["name"] == "div"
+    assert "type" in result
+
+
+@pytest.mark.asyncio
+async def test_expand_content_model_tool_not_found(ctx):
+    """expand_content_model for unknown name returns error with suggestions."""
+    result = await expand_content_model("nonexistent", ctx)
+    assert isinstance(result, dict)
+    assert "error" in result
+    assert "suggestions" in result
+
+
+@pytest.mark.asyncio
+async def test_expand_content_model_tool_macro(ctx):
+    """expand_content_model works for macro names."""
+    result = await expand_content_model("macro.paraContent", ctx)
+    assert isinstance(result, dict)
+    assert "error" not in result
+
+
+# ---------------------------------------------------------------------------
+# check_nesting
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_check_nesting_tool_direct(ctx):
+    """check_nesting direct mode returns valid/invalid with reason."""
+    result = await check_nesting("p", "div", ctx=ctx)
+    assert isinstance(result, dict)
+    assert "valid" in result
+    assert "reason" in result
+    assert result["valid"] is True
+
+
+@pytest.mark.asyncio
+async def test_check_nesting_tool_recursive(ctx):
+    """check_nesting recursive mode returns reachable with path."""
+    result = await check_nesting("persName", "body", recursive=True, ctx=ctx)
+    assert isinstance(result, dict)
+    assert "reachable" in result
+    assert "path" in result
+    assert result["reachable"] is True
+    assert len(result["path"]) >= 2
+
+
+@pytest.mark.asyncio
+async def test_check_nesting_tool_not_found(ctx):
+    """check_nesting for unknown element returns error with suggestions."""
+    result = await check_nesting("nonexistent", "div", ctx=ctx)
+    assert isinstance(result, dict)
+    assert "error" in result
+    assert "suggestions" in result

@@ -178,6 +178,51 @@ async def class_membership_chain(name: str, ctx: Context) -> dict:
     return store.get_class_chain(name)
 
 
+@mcp.tool()
+async def expand_content_model(name: str, ctx: Context) -> dict:
+    """Expand the content model for a TEI element or macro into a structured tree.
+
+    Returns a nested JSON tree preserving structural semantics (sequence,
+    alternation, repetition). Class references are resolved to concrete
+    element names with 'via' annotations. Macro references are recursively
+    resolved inline.
+
+    Accepts both element names (e.g., "div", "p") and macro names
+    (e.g., "macro.paraContent"). Case-insensitive lookup with suggestions
+    on not-found.
+
+    Example: expand_content_model("div")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.expand_content_model(name)
+
+
+@mcp.tool()
+async def check_nesting(
+    child: str,
+    parent: str,
+    recursive: bool = False,
+    ctx: Context = None,
+) -> dict:
+    """Check whether a TEI element can appear inside another element.
+
+    By default checks direct parent-child validity. Set recursive=True
+    to check if the child can appear anywhere nested inside the ancestor
+    (with path tracking and cycle detection).
+
+    Direct mode returns: {valid, child, parent, reason}
+    Recursive mode returns: {reachable, child, ancestor, path, reason}
+
+    The reason field explains why nesting is valid or invalid -- useful
+    for understanding TEI structure and self-correcting markup.
+
+    Example: check_nesting("p", "div")
+    Example: check_nesting("persName", "body", recursive=True)
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.check_nesting(child, parent, recursive=recursive)
+
+
 def main():
     """Entry point for the tei-mcp console script."""
     mcp.run()
