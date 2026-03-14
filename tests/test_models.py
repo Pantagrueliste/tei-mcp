@@ -4,7 +4,68 @@ import dataclasses
 
 import pytest
 
-from tei_mcp.models import ClassDef, ElementDef, MacroDef, ModuleDef
+from tei_mcp.models import AttDef, ClassDef, ElementDef, MacroDef, ModuleDef
+
+
+class TestAttDef:
+    def test_frozen_rejects_mutation(self):
+        att = AttDef(
+            ident="part",
+            desc="specifies whether or not the paragraph is complete.",
+            datatype="teidata.enumerated",
+            values=("Y", "N", "I", "M", "F"),
+            closed=True,
+        )
+        with pytest.raises(dataclasses.FrozenInstanceError):
+            att.ident = "other"
+
+    def test_stores_all_fields(self):
+        att = AttDef(
+            ident="ref",
+            desc="provides a reference.",
+            datatype="teidata.pointer",
+            values=(),
+            closed=False,
+        )
+        assert att.ident == "ref"
+        assert att.desc == "provides a reference."
+        assert att.datatype == "teidata.pointer"
+        assert att.values == ()
+        assert att.closed is False
+
+    def test_serializes_via_asdict(self):
+        att = AttDef(
+            ident="type",
+            desc="indicates a type.",
+            datatype="teidata.text",
+            values=(),
+            closed=False,
+        )
+        d = dataclasses.asdict(att)
+        assert d == {
+            "ident": "type",
+            "desc": "indicates a type.",
+            "datatype": "teidata.text",
+            "values": (),
+            "closed": False,
+        }
+
+    def test_closed_true_with_values(self):
+        att = AttDef(
+            ident="part",
+            desc="",
+            datatype="teidata.enumerated",
+            values=("Y", "N"),
+            closed=True,
+        )
+        assert att.closed is True
+        assert att.values == ("Y", "N")
+
+    def test_empty_defaults(self):
+        att = AttDef(ident="n", desc="", datatype="", values=(), closed=False)
+        assert att.datatype == ""
+        assert att.values == ()
+        assert att.closed is False
 
 
 class TestElementDef:
@@ -15,20 +76,22 @@ class TestElementDef:
             gloss="paragraph",
             desc="marks paragraphs in prose.",
             classes=("model.pLike",),
-            attributes=("part",),
+            attributes=(AttDef(ident="part", desc="", datatype="teidata.enumerated", values=("Y", "N"), closed=True),),
             content_raw="<content/>",
         )
         with pytest.raises(dataclasses.FrozenInstanceError):
             elem.ident = "div"
 
     def test_stores_all_fields(self):
+        type_att = AttDef(ident="type", desc="indicates a type.", datatype="teidata.text", values=(), closed=False)
+        ref_att = AttDef(ident="ref", desc="provides a reference.", datatype="anyURI", values=(), closed=False)
         elem = ElementDef(
             ident="persName",
             module="namesdates",
             gloss="personal name",
             desc="contains a proper noun referring to a person.",
             classes=("model.nameLike.agent", "att.global"),
-            attributes=("type", "ref"),
+            attributes=(type_att, ref_att),
             content_raw="<content><textNode/></content>",
         )
         assert elem.ident == "persName"
@@ -36,7 +99,8 @@ class TestElementDef:
         assert elem.gloss == "personal name"
         assert elem.desc == "contains a proper noun referring to a person."
         assert elem.classes == ("model.nameLike.agent", "att.global")
-        assert elem.attributes == ("type", "ref")
+        assert elem.attributes[0].ident == "type"
+        assert elem.attributes[1].ident == "ref"
         assert elem.content_raw == "<content><textNode/></content>"
 
 
@@ -74,7 +138,10 @@ class TestClassDef:
             gloss="",
             desc="",
             classes=(),
-            attributes=("xml:id", "n"),
+            attributes=(
+                AttDef(ident="xml:id", desc="", datatype="ID", values=(), closed=False),
+                AttDef(ident="n", desc="", datatype="teidata.text", values=(), closed=False),
+            ),
         )
         assert cls.class_type == "atts"
 
