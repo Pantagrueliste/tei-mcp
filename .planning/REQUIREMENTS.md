@@ -10,8 +10,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Bootstrap
 
 - [x] **BOOT-01**: Download script fetches p5subset.xml from TEIC/TEI GitHub repo
-- [ ] **BOOT-02**: Server parses p5subset.xml once at startup into in-memory data structures for elements, classes, macros, and modules
-- [ ] **BOOT-03**: FastMCP server starts via stdio transport with all tools registered
+- [x] **BOOT-02**: Server parses p5subset.xml once at startup into in-memory data structures for elements, classes, macros, and modules
+- [x] **BOOT-03**: FastMCP server starts via stdio transport with all tools registered
 - [x] **BOOT-04**: uv manages all project dependencies via pyproject.toml
 
 ### Lookup
@@ -50,9 +50,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Cross-Cutting
 
-- [ ] **XCUT-01**: All tools return JSON responses
+- [x] **XCUT-01**: All tools return JSON responses
 - [x] **XCUT-02**: All tools are read-only
-- [ ] **XCUT-03**: No output to stdout except MCP protocol messages (logging to stderr only)
+- [x] **XCUT-03**: No output to stdout except MCP protocol messages (logging to stderr only)
 
 ## v2 Requirements
 
@@ -87,8 +87,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BOOT-01 | Phase 1 | Complete |
-| BOOT-02 | Phase 1 | Pending |
-| BOOT-03 | Phase 1 | Pending |
+| BOOT-02 | Phase 1 | Complete |
+| BOOT-03 | Phase 1 | Complete |
 | BOOT-04 | Phase 1 | Complete |
 | LOOK-01 | Phase 2 | Pending |
 | LOOK-02 | Phase 2 | Pending |
@@ -106,9 +106,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NEST-02 | Phase 4 | Pending |
 | NEST-03 | Phase 4 | Pending |
 | HIER-01 | Phase 3 | Pending |
-| XCUT-01 | Phase 1 | Pending |
+| XCUT-01 | Phase 1 | Complete |
 | XCUT-02 | Phase 1 | Complete |
-| XCUT-03 | Phase 1 | Pending |
+| XCUT-03 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 23 total
