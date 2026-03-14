@@ -40,9 +40,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Nesting Validation
 
-- [ ] **NEST-01**: User can check if element X can be a direct child of element Y (parent-child validity)
-- [ ] **NEST-02**: User can check if element X can appear anywhere inside element Y (recursive reachability)
-- [ ] **NEST-03**: Nesting checks handle cycles in the content model graph (e.g., div contains div)
+- [x] **NEST-01**: User can check if element X can be a direct child of element Y (parent-child validity)
+- [x] **NEST-02**: User can check if element X can appear anywhere inside element Y (recursive reachability)
+- [x] **NEST-03**: Nesting checks handle cycles in the content model graph (e.g., div contains div)
 
 ### Class Hierarchy
 
@@ -102,9 +102,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMOD-01 | Phase 4 | Complete |
 | CMOD-02 | Phase 4 | Complete |
 | CMOD-03 | Phase 4 | Complete |
-| NEST-01 | Phase 4 | Pending |
-| NEST-02 | Phase 4 | Pending |
-| NEST-03 | Phase 4 | Pending |
+| NEST-01 | Phase 4 | Complete |
+| NEST-02 | Phase 4 | Complete |
+| NEST-03 | Phase 4 | Complete |
 | HIER-01 | Phase 3 | Complete |
 | XCUT-01 | Phase 1 | Complete |
 | XCUT-02 | Phase 1 | Complete |

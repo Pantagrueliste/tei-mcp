@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-14T23:52:52Z"
-last_activity: 2026-03-14 -- Completed 04-01 content model expansion engine
+status: completed
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-14T23:58:10.571Z"
+last_activity: 2026-03-14 -- Completed 04-02 nesting validation and MCP tool wiring
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 8
-  completed_plans: 7
-  percent: 88
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 
 ## Current Position
 
-Phase: 4 of 4 (Content Models and Nesting Validation)
-Plan: 1 of 2 in current phase -- COMPLETE
-Status: 04-01 complete, 04-02 pending
-Last activity: 2026-03-14 -- Completed 04-01 content model expansion engine
+Phase: 4 of 4 (Content Models and Nesting Validation) -- COMPLETE
+Plan: 2 of 2 in current phase -- COMPLETE
+Status: All phases complete. Milestone v1.0 done.
+Last activity: 2026-03-14 -- Completed 04-02 nesting validation and MCP tool wiring
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [█████████░] 88%
 | Phase 03 P01 | 5min | 2 tasks | 8 files |
 | Phase 03 P02 | 2min | 1 tasks | 2 files |
 | Phase 04 P01 | 3min | 2 tasks | 5 files |
+| Phase 04 P02 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,9 @@ Recent decisions affecting current work:
 - [04-01]: MacroRef nodes resolved inline (replaced by macro content tree) rather than kept as references
 - [04-01]: ClassRef via field tracks the class where the member was found for useful provenance
 - [04-01]: Sentinel _ANY='*' used for anyElement in _collect_direct_children
+- [Phase 04]: BFS for recursive nesting uses visited set to handle self-referencing cycles (div -> model.divLike -> div)
+- [Phase 04]: Direct nesting reason enriched with classRef provenance via _find_class_for_child tree walk
+- [Phase 04]: check_nesting combines direct and recursive in single method with recursive=False default
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T23:52:52Z
-Stopped at: Completed 04-01-PLAN.md
-Resume file: .planning/phases/04-content-models-and-nesting-validation/04-01-SUMMARY.md
+Last session: 2026-03-14T23:58:10.569Z
+Stopped at: Completed 04-02-PLAN.md
+Resume file: None
