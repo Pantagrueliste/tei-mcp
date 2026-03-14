@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-14T22:31:37.859Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-14T22:34:56.946Z"
 last_activity: 2026-03-14 -- Completed 02-01 store query methods
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-14)
 
 **Core value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting -- so it produces correct TEI markup without hallucinating the spec.
-**Current focus:** Phase 2: Basic Lookups and Search
+**Current focus:** Phase 2 Complete -- Ready for Phase 3: Attribute Resolution
 
 ## Current Position
 
-Phase: 2 of 4 (Basic Lookups and Search)
-Plan: 1 of 2 in current phase
-Status: Executing Phase 2
-Last activity: 2026-03-14 -- Completed 02-01 store query methods
+Phase: 2 of 4 (Basic Lookups and Search) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase 2 Complete
+Last activity: 2026-03-14 -- Completed 02-02 MCP tool registration
 
-Progress: [████████░░] 75%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [████████░░] 75%
 *Updated after each plan completion*
 | Phase 01 P02 | 3min | 2 tasks | 5 files |
 | Phase 02 P01 | 2min | 2 tasks | 3 files |
+| Phase 02 P02 | 1min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [02-01]: Reverse indexes built eagerly in __init__ for O(1) access
 - [02-01]: Search checks ident > gloss > desc in priority order, stops at first match per entity
 - [02-01]: suggest_names uses difflib.get_close_matches with cutoff=0.4 on lowercased names
+- [Phase 02]: Tools return plain dicts via dataclasses.asdict() for JSON serialization
+- [Phase 02]: MCP tool pattern: async fn with (params, ctx: Context) -> dict, store from ctx.lifespan_context
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T22:31:37.856Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-14T22:34:56.943Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
