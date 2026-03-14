@@ -4,6 +4,17 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class AttDef:
+    """A TEI attribute definition with datatype and value constraints."""
+
+    ident: str
+    desc: str
+    datatype: str  # "teidata.enumerated", "ID", "" if absent
+    values: tuple[str, ...]  # valItem idents from valList
+    closed: bool  # True if valList type="closed"
+
+
+@dataclass(frozen=True)
 class ElementDef:
     """A TEI element definition parsed from an elementSpec."""
 
@@ -12,7 +23,7 @@ class ElementDef:
     gloss: str
     desc: str
     classes: tuple[str, ...]
-    attributes: tuple[str, ...]
+    attributes: tuple[AttDef, ...]
     content_raw: str
 
 
@@ -26,7 +37,7 @@ class ClassDef:
     gloss: str
     desc: str
     classes: tuple[str, ...]
-    attributes: tuple[str, ...]
+    attributes: tuple[AttDef, ...]
 
 
 @dataclass(frozen=True)

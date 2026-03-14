@@ -6,7 +6,7 @@ import logging
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from tei_mcp.models import ClassDef, ElementDef, MacroDef, ModuleDef
+from tei_mcp.models import AttDef, ClassDef, ElementDef, MacroDef, ModuleDef
 from tei_mcp.store import OddStore
 
 logger = logging.getLogger("tei-mcp")
@@ -53,6 +53,31 @@ def _get_content_raw(el: ET.Element) -> str:
     return ""
 
 
+def _parse_att_def(el: ET.Element) -> AttDef:
+    """Parse an <attDef> element into an AttDef dataclass."""
+    ident = el.get("ident", "")
+    desc = _text(el, "tei:desc")
+
+    # Extract datatype from <datatype>/<dataRef>
+    datatype = ""
+    dt_el = el.find("tei:datatype", NS)
+    if dt_el is not None:
+        dr = dt_el.find("tei:dataRef", NS)
+        if dr is not None:
+            # key= for TEI datatypes, name= for XSD primitives
+            datatype = dr.get("key", "") or dr.get("name", "")
+
+    # Extract values from <valList>/<valItem>
+    values: tuple[str, ...] = ()
+    closed = False
+    vl = el.find("tei:valList", NS)
+    if vl is not None:
+        values = tuple(vi.get("ident", "") for vi in vl.findall("tei:valItem", NS))
+        closed = vl.get("type", "") == "closed"
+
+    return AttDef(ident=ident, desc=desc, datatype=datatype, values=values, closed=closed)
+
+
 def _parse_element_spec(el: ET.Element) -> ElementDef:
     """Parse an <elementSpec> element into an ElementDef."""
     ident = el.get("ident", "")
@@ -63,7 +88,7 @@ def _parse_element_spec(el: ET.Element) -> ElementDef:
         m.get("key", "") for m in el.findall("tei:classes/tei:memberOf", NS)
     )
     attributes = tuple(
-        a.get("ident", "") for a in el.findall("tei:attList//tei:attDef", NS)
+        _parse_att_def(a) for a in el.findall("tei:attList//tei:attDef", NS)
     )
     content_raw = _get_content_raw(el)
     return ElementDef(
@@ -88,7 +113,7 @@ def _parse_class_spec(el: ET.Element) -> ClassDef:
         m.get("key", "") for m in el.findall("tei:classes/tei:memberOf", NS)
     )
     attributes = tuple(
-        a.get("ident", "") for a in el.findall("tei:attList//tei:attDef", NS)
+        _parse_att_def(a) for a in el.findall("tei:attList//tei:attDef", NS)
     )
     return ClassDef(
         ident=ident,

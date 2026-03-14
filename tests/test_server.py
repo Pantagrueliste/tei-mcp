@@ -61,7 +61,7 @@ async def test_lifespan_loads_store(test_odd_path: Path):
         async with app_lifespan(mcp._mcp_server) as context:
             store = context["store"]
             assert store.element_count == 3
-            assert store.class_count == 2
+            assert store.class_count == 4
             assert store.macro_count == 1
             assert store.module_count == 2
 

@@ -14,6 +14,7 @@
     <attList>
       <attDef ident="part" usage="opt">
         <desc xml:lang="en">specifies whether or not the paragraph is complete.</desc>
+        <datatype><dataRef key="teidata.enumerated"/></datatype>
         <valList type="closed">
           <valItem ident="Y"><desc xml:lang="en">yes</desc></valItem>
           <valItem ident="N"><desc xml:lang="en">no</desc></valItem>
@@ -34,13 +35,16 @@
     <classes>
       <memberOf key="model.nameLike.agent"/>
       <memberOf key="att.global"/>
+      <memberOf key="att.naming"/>
     </classes>
     <attList>
       <attDef ident="type" usage="opt">
         <desc xml:lang="en">indicates a more specific type of personal name.</desc>
+        <datatype><dataRef key="teidata.text"/></datatype>
       </attDef>
       <attDef ident="ref" usage="opt">
         <desc xml:lang="en">provides a reference to a canonical identifier for the person.</desc>
+        <datatype><dataRef name="anyURI"/></datatype>
       </attDef>
     </attList>
     <content>
@@ -102,9 +106,41 @@
     <attList>
       <attDef ident="xml:id" usage="opt">
         <desc xml:lang="en">provides a unique identifier for the element.</desc>
+        <datatype><dataRef key="ID"/></datatype>
       </attDef>
       <attDef ident="n" usage="opt">
         <desc xml:lang="en">gives a number or similar label for an element.</desc>
+        <datatype><dataRef key="teidata.text"/></datatype>
+      </attDef>
+    </attList>
+  </classSpec>
+
+  <classSpec ident="att.naming" module="namesdates" type="atts">
+    <gloss xml:lang="en">naming attributes</gloss>
+    <desc xml:lang="en">provides attributes for naming entities.</desc>
+    <classes>
+      <memberOf key="att.canonical"/>
+    </classes>
+    <attList>
+      <attDef ident="role" usage="opt">
+        <desc xml:lang="en">specifies a primary role for the person.</desc>
+        <datatype><dataRef key="teidata.enumerated"/></datatype>
+        <valList type="semi">
+          <valItem ident="author"><desc xml:lang="en">author</desc></valItem>
+          <valItem ident="editor"><desc xml:lang="en">editor</desc></valItem>
+        </valList>
+      </attDef>
+    </attList>
+  </classSpec>
+
+  <classSpec ident="att.canonical" module="tei" type="atts">
+    <gloss xml:lang="en">canonical reference attributes</gloss>
+    <desc xml:lang="en">provides attributes for canonical references.</desc>
+    <classes/>
+    <attList>
+      <attDef ident="ref" usage="opt">
+        <desc xml:lang="en">provides an explicit means of locating a full definition or identity for the entity being named.</desc>
+        <datatype><dataRef key="teidata.pointer"/></datatype>
       </attDef>
     </attList>
   </classSpec>
