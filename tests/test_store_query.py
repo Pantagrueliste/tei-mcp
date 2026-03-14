@@ -444,3 +444,79 @@ def test_expand_dataref(parsed_store):
     assert result["name"] == "gi"
     assert result["type"] == "dataRef"
     assert result["key"] == "teidata.name"
+
+
+# --- Nesting validation tests ---
+
+
+def test_check_nesting_direct_valid(parsed_store):
+    """check_nesting('p', 'div') returns valid=True; reason mentions model.pLike or model.common."""
+    result = parsed_store.check_nesting("p", "div")
+    assert result["valid"] is True
+    assert result["child"] == "p"
+    assert result["parent"] == "div"
+    assert "reason" in result
+    # Reason should mention the class path
+    reason = result["reason"].lower()
+    assert "model.plike" in reason or "model.common" in reason
+
+
+def test_check_nesting_direct_invalid(parsed_store):
+    """check_nesting('div', 'p') returns valid=False."""
+    result = parsed_store.check_nesting("div", "p")
+    assert result["valid"] is False
+    assert result["child"] == "div"
+    assert result["parent"] == "p"
+    assert "reason" in result
+
+
+def test_check_nesting_direct_element_ref(parsed_store):
+    """check_nesting('surname', 'persName') returns valid=True (direct elementRef)."""
+    result = parsed_store.check_nesting("surname", "persName")
+    assert result["valid"] is True
+    assert result["child"] == "surname"
+    assert result["parent"] == "persName"
+
+
+def test_check_nesting_recursive_reachable(parsed_store):
+    """check_nesting('persName', 'body', recursive=True) returns reachable=True with path."""
+    result = parsed_store.check_nesting("persName", "body", recursive=True)
+    assert result["reachable"] is True
+    assert result["child"] == "persName"
+    assert result["ancestor"] == "body"
+    assert isinstance(result["path"], list)
+    assert result["path"][0] == "body"
+    assert result["path"][-1] == "persName"
+    assert len(result["path"]) >= 2
+    assert "reason" in result
+
+
+def test_check_nesting_recursive_unreachable(parsed_store):
+    """check_nesting('body', 'persName', recursive=True) returns reachable=False."""
+    result = parsed_store.check_nesting("body", "persName", recursive=True)
+    assert result["reachable"] is False
+    assert result["child"] == "body"
+    assert result["ancestor"] == "persName"
+    assert result["path"] == []
+
+
+def test_check_nesting_cycle(parsed_store):
+    """check_nesting('div', 'div', recursive=True) handles cycle without infinite loop."""
+    result = parsed_store.check_nesting("div", "div", recursive=True)
+    assert result["reachable"] is True
+    assert result["path"] == ["div", "div"]
+
+
+def test_check_nesting_not_found(parsed_store):
+    """check_nesting('nonexistent', 'div') returns error dict with suggestions."""
+    result = parsed_store.check_nesting("nonexistent", "div")
+    assert "error" in result
+    assert "suggestions" in result
+
+
+def test_check_nesting_case_insensitive(parsed_store):
+    """check_nesting('P', 'DIV') works case-insensitively."""
+    result = parsed_store.check_nesting("P", "DIV")
+    assert result["valid"] is True
+    assert result["child"] == "p"
+    assert result["parent"] == "div"
