@@ -141,6 +141,43 @@ async def search(
     return store.search(pattern, entity_type, max_results)
 
 
+@mcp.tool()
+async def list_attributes(name: str, ctx: Context) -> dict:
+    """List all attributes for a TEI element or class, including inherited attributes.
+
+    Returns a flat list of attributes with local attributes first, then inherited
+    in hierarchy order (nearest class first). Each attribute includes its name,
+    source class (or "local"), datatype, allowed values, and whether the value
+    list is closed. Local overrides of inherited attributes include an "overrides"
+    field indicating which class was overridden.
+
+    Accepts both element names (e.g., "persName") and att.* class names
+    (e.g., "att.global"). Case-insensitive lookup with suggestions on not-found.
+
+    Example: list_attributes("persName")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.resolve_attributes(name)
+
+
+@mcp.tool()
+async def class_membership_chain(name: str, ctx: Context) -> dict:
+    """Show the full class membership hierarchy for a TEI element or class.
+
+    Returns separate chains for each direct class membership. Each chain walks
+    upward through the class hierarchy to the root. Each step includes the
+    class ident, type (model or atts), and gloss.
+
+    Accepts both element names (e.g., "persName") and class names
+    (e.g., "model.nameLike.agent"). Case-insensitive lookup with suggestions
+    on not-found.
+
+    Example: class_membership_chain("persName")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.get_class_chain(name)
+
+
 def main():
     """Entry point for the tei-mcp console script."""
     mcp.run()
