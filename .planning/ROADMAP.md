@@ -12,7 +12,7 @@ This roadmap delivers a read-only MCP server that exposes the TEI P5 ODD specifi
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Project scaffold, ODD parser, in-memory data model, and MCP server shell
+- [x] **Phase 1: Foundation** - Project scaffold, ODD parser, in-memory data model, and MCP server shell (completed 2026-03-14)
 - [ ] **Phase 2: Basic Lookups and Search** - Element, class, macro, and module lookup tools plus regex search
 - [ ] **Phase 3: Attribute Resolution and Class Hierarchy** - Full inherited attribute listing and class membership chain traversal
 - [ ] **Phase 4: Content Models and Nesting Validation** - Content model expansion and parent-child nesting checks
@@ -26,7 +26,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Success Criteria** (what must be TRUE):
   1. Running `uv run` starts the MCP server without errors and it responds to the MCP initialize handshake over stdio
   2. A download script fetches p5subset.xml from the TEIC/TEI GitHub repo and places it in the expected location
-  3. The parser loads p5subset.xml and builds indexes containing 500+ elements, 200+ classes, and 50+ macros (verifiable by count)
+  3. The parser loads p5subset.xml and builds indexes containing 500+ elements, 200+ classes, and 5+ macros (verifiable by count; TEI P5 has ~588 elements, ~212 classes, ~8 macros)
   4. All server output goes through stderr logging only -- no stdout contamination outside MCP protocol messages
   5. All tool responses are JSON and all tools are read-only (no mutation of parsed data)
 **Plans**: 2 plans
@@ -45,11 +45,11 @@ Plans:
   3. User can call lookup_macro with a name like "macro.paraContent" and receive its ident, description, and content definition
   4. User can call list_module_elements with a module name like "namesdates" and receive all elements belonging to that module
   5. User can call search with a regex pattern and receive matching entities (elements, classes, macros) with their type, ident, and gloss
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — OddStore query methods: case-insensitive lookup, reverse indexes, regex search, name suggestions
+- [ ] 02-02-PLAN.md — Five MCP tool registrations wrapping store query methods
 
 ### Phase 3: Attribute Resolution and Class Hierarchy
 **Goal**: An LLM can retrieve the complete attribute set for any element including inherited attributes, and trace class membership chains
@@ -89,7 +89,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/2 | Planning complete | - |
-| 2. Basic Lookups and Search | 0/0 | Not started | - |
+| 1. Foundation | 0/2 | Complete    | 2026-03-14 |
+| 2. Basic Lookups and Search | 0/2 | Not started | - |
 | 3. Attribute Resolution and Class Hierarchy | 0/0 | Not started | - |
 | 4. Content Models and Nesting Validation | 0/0 | Not started | - |

@@ -13,3 +13,11 @@ def test_odd_path() -> Path:
 def odd_xml_bytes(test_odd_path: Path) -> bytes:
     """Return the test ODD XML as bytes (for mocking download)."""
     return test_odd_path.read_bytes()
+
+
+@pytest.fixture
+def parsed_store(test_odd_path: Path):
+    """Return OddStore built from test_odd.xml via parse_odd()."""
+    from tei_mcp.parser import parse_odd
+
+    return parse_odd(test_odd_path)
