@@ -59,12 +59,12 @@ Requirements for document validation and enhanced querying milestone.
 ### Validation
 
 - [x] **VALD-01**: User can call validate_document with a TEI XML file path and receive a JSON array of issues with severity, line number, element, message, and rule
-- [ ] **VALD-02**: validate_document checks content model compliance — flags children not allowed by the parent's expanded content model
-- [ ] **VALD-03**: validate_document checks required children — flags elements violating minimum cardinality (e.g., choice needs ≥2 children)
-- [ ] **VALD-04**: validate_document checks attribute validity — flags attributes not in the element's attribute list (including inherited)
-- [ ] **VALD-05**: validate_document checks closed value lists — flags attribute values not in allowed sets
-- [ ] **VALD-06**: validate_document checks empty elements — flags elements with required content models that have no children
-- [ ] **VALD-07**: validate_document checks reference integrity — flags bare ref="#" placeholders and optionally validates ref targets against authority file xml:id values
+- [x] **VALD-02**: validate_document checks content model compliance — flags children not allowed by the parent's expanded content model
+- [x] **VALD-03**: validate_document checks required children — flags elements violating minimum cardinality (e.g., choice needs ≥2 children)
+- [x] **VALD-04**: validate_document checks attribute validity — flags attributes not in the element's attribute list (including inherited)
+- [x] **VALD-05**: validate_document checks closed value lists — flags attribute values not in allowed sets
+- [x] **VALD-06**: validate_document checks empty elements — flags elements with required content models that have no children
+- [x] **VALD-07**: validate_document checks reference integrity — flags bare ref="#" placeholders and optionally validates ref targets against authority file xml:id values
 - [ ] **VALD-08**: validate_document checks missing attributes — flags elements where key attributes are absent (e.g., locus without from/to, date without when, persName without ref in body)
 - [x] **VALD-09**: validate_document response clearly states scope limitations (not checked: Schematron, datatype patterns, element ordering)
 - [ ] **VALD-10**: User can call validate_element with element context to check a single element for incremental editing workflows
@@ -73,7 +73,7 @@ Requirements for document validation and enhanced querying milestone.
 
 - [x] **DEPR-01**: list_attributes flags deprecated attributes with a "deprecated" field, validUntil date, and migration guidance
 - [x] **DEPR-02**: lookup_element surfaces deprecation status for deprecated elements
-- [ ] **DEPR-03**: validate_document emits warnings for deprecated attribute and element usage
+- [x] **DEPR-03**: validate_document emits warnings for deprecated attribute and element usage
 - [x] **DEPR-04**: Parser extracts @validUntil and desc type="deprecationInfo" from ODD spec into model fields
 
 ### Enhanced Querying
@@ -146,18 +146,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | XCUT-02 | Phase 1 | Complete |
 | XCUT-03 | Phase 1 | Complete |
 | VALD-01 | Phase 7 | Complete |
-| VALD-02 | Phase 7 | Pending |
-| VALD-03 | Phase 7 | Pending |
-| VALD-04 | Phase 7 | Pending |
-| VALD-05 | Phase 7 | Pending |
-| VALD-06 | Phase 7 | Pending |
-| VALD-07 | Phase 7 | Pending |
+| VALD-02 | Phase 7 | Complete |
+| VALD-03 | Phase 7 | Complete |
+| VALD-04 | Phase 7 | Complete |
+| VALD-05 | Phase 7 | Complete |
+| VALD-06 | Phase 7 | Complete |
+| VALD-07 | Phase 7 | Complete |
 | VALD-08 | Phase 7 | Pending |
 | VALD-09 | Phase 7 | Complete |
 | VALD-10 | Phase 7 | Pending |
 | DEPR-01 | Phase 5 | Complete |
 | DEPR-02 | Phase 5 | Complete |
-| DEPR-03 | Phase 7 | Pending |
+| DEPR-03 | Phase 7 | Complete |
 | DEPR-04 | Phase 5 | Complete |
 | QURY-01 | Phase 6 | Complete |
 | QURY-02 | Phase 6 | Complete |

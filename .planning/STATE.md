@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Document Validation & Enhanced Querying
 status: in-progress
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-03-15T14:59:17Z"
-last_activity: 2026-03-15 -- Completed 07-01 validator scaffold
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-03-15T15:06:03Z"
+last_activity: 2026-03-15 -- Completed 07-02 validation checks
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 87
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 7 of 8 (Core Validation)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: In Progress
-Last activity: 2026-03-15 -- Completed 07-01 validator scaffold
+Last activity: 2026-03-15 -- Completed 07-02 validation checks
 
-Progress: [███████░░░] 75%
+Progress: [████████░░] 87%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [███████░░░] 75%
 | Phase 06 P02 | 1min | 2 tasks | 4 files |
 | Phase 06 P03 | 1min | 2 tasks | 4 files |
 | Phase 07 P01 | 2min | 1 task | 3 files |
+| Phase 07 P02 | 4min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,7 @@ Recent decisions affecting current work:
 - [06-02]: check_nesting_batch reuses existing check_nesting per pair; per-pair error isolation in batch operations
 - [Phase 06]: _get_attr_description helper looks up desc from element or class; keyword overlap scoring with locality tie-breaking
 - [07-01]: TEIValidator as separate module consuming OddStore; lxml for user docs only; LIMITATIONS constant in every response
+- [07-02]: Warning for required-children (fuzzy detection); only ref/target checked for ref-integrity; bare '#' is warning not error
 
 ### Pending Todos
 
@@ -85,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T14:59:17Z
-Stopped at: Completed 07-01-PLAN.md
-Resume file: .planning/phases/07-core-validation/07-01-SUMMARY.md
+Last session: 2026-03-15T15:06:03Z
+Stopped at: Completed 07-02-PLAN.md
+Resume file: .planning/phases/07-core-validation/07-02-SUMMARY.md

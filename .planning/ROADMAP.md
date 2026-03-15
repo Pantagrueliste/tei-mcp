@@ -109,5 +109,5 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8
 | 4. Content Models and Nesting Validation | v1.0 | 2/2 | Complete | 2026-03-15 |
 | 5. Deprecation Awareness | v2.0 | 2/2 | Complete | 2026-03-15 |
 | 6. Enhanced Querying | v2.0 | 3/3 | Complete | 2026-03-15 |
-| 7. Core Validation | v2.0 | 1/3 | In Progress | - |
+| 7. Core Validation | 2/3 | In Progress|  | - |
 | 8. ODD Customisation | v2.0 | 0/? | Not started | - |
