@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Test ODD Customisation</title>
+      </titleStmt>
+      <publicationStmt>
+        <p>Test fixture for customisation tests.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Created for testing.</p>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <schemaSpec ident="testCustom" start="TEI">
+
+        <!-- Include all elements from core module -->
+        <moduleRef key="core"/>
+
+        <!-- Include only teiHeader, fileDesc, titleStmt from header module -->
+        <!-- Note: these elements don't exist in our test fixture's base store,
+             so this tests that include filtering works without errors -->
+        <moduleRef key="namesdates" include="persName surname"/>
+
+        <!-- Include all from textstructure -->
+        <moduleRef key="textstructure"/>
+
+        <!-- Delete note element -->
+        <elementSpec ident="note" mode="delete"/>
+
+        <!-- Change p: restrict rend valList, delete part attribute -->
+        <elementSpec ident="p" mode="change">
+          <attList>
+            <attDef ident="rend" mode="change">
+              <valList type="closed">
+                <valItem ident="italic"/>
+                <valItem ident="bold"/>
+              </valList>
+            </attDef>
+            <attDef ident="part" mode="delete"/>
+          </attList>
+        </elementSpec>
+
+      </schemaSpec>
+    </body>
+  </text>
+</TEI>

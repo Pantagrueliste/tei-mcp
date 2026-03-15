@@ -39,7 +39,7 @@ def test_element_p_fields(test_odd_path: Path):
     assert p.gloss == "paragraph"
     assert p.desc == "marks paragraphs in prose."
     assert p.classes == ("model.pLike", "att.global")
-    assert len(p.attributes) == 1
+    assert len(p.attributes) == 2
     assert isinstance(p.attributes[0], AttDef)
     assert p.attributes[0].ident == "part"
     assert p.attributes[0].datatype == "teidata.enumerated"

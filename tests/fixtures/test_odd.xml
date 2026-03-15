@@ -23,6 +23,16 @@
           <valItem ident="F"><desc xml:lang="en">final</desc></valItem>
         </valList>
       </attDef>
+      <attDef ident="rend" usage="opt">
+        <desc xml:lang="en">indicates how the element in question was rendered or presented in the source text.</desc>
+        <datatype><dataRef key="teidata.word"/></datatype>
+        <valList type="semi">
+          <valItem ident="italic"><desc xml:lang="en">italic</desc></valItem>
+          <valItem ident="bold"><desc xml:lang="en">bold</desc></valItem>
+          <valItem ident="underline"><desc xml:lang="en">underline</desc></valItem>
+          <valItem ident="strikethrough"><desc xml:lang="en">strikethrough</desc></valItem>
+        </valList>
+      </attDef>
     </attList>
     <content>
       <macroRef key="macro.paraContent"/>
