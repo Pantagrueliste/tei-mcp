@@ -115,3 +115,198 @@ def test_validate_file_parses_with_line_numbers(parsed_store, valid_tei_path):
     for elem in root.iter():
         if isinstance(elem.tag, str):
             assert elem.sourceline is not None, f"sourceline is None for {elem.tag}"
+
+
+# ---- Task 1: Content model, attribute, and empty element checks ----
+
+
+def _make_tei(tmp_path: Path, body_content: str, filename: str = "test.xml") -> Path:
+    """Helper: write a minimal TEI doc wrapping body_content and return path."""
+    xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        f"<text><body>{body_content}</body></text>"
+        "</TEI>"
+    )
+    p = tmp_path / filename
+    p.write_text(xml, encoding="utf-8")
+    return p
+
+
+def test_invalid_child_flagged(parsed_store, tmp_path):
+    """A TEI doc with <p><gap/></p> should NOT flag gap (gap is phrase-level).
+    But <body><head>X</head></body> where head is not a valid child of body
+    should flag it -- actually head IS in model.divTop which body allows.
+    Use <p><div><p>X</p></div></p> -- div is not a valid child of p."""
+    # div is NOT in p's children list (p allows phrase-level: hi, persName, etc.)
+    path = _make_tei(tmp_path, "<p><div><p>inner</p></div></p>")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    content_errors = [i for i in result["issues"] if i["rule"] == "content-model"]
+    assert len(content_errors) >= 1
+    assert any(i["element"] == "div" for i in content_errors)
+
+
+def test_valid_child_no_error(parsed_store, tmp_path):
+    """<p><hi>text</hi></p> produces no content-model errors."""
+    path = _make_tei(tmp_path, "<p><hi>text</hi></p>")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    content_errors = [i for i in result["issues"] if i["rule"] == "content-model"]
+    assert len(content_errors) == 0
+
+
+def test_allows_any_element_skips_check(parsed_store, tmp_path):
+    """egXML allows anyElement -- children should not be flagged."""
+    # egXML allows any element, so <egXML><foobar/></egXML> should not flag foobar
+    xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        "<text><body><p><egXML><foobar/></egXML></p></body></text>"
+        "</TEI>"
+    )
+    p = tmp_path / "anyelem.xml"
+    p.write_text(xml, encoding="utf-8")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(p))
+    content_errors = [i for i in result["issues"] if i["rule"] == "content-model"]
+    # No content-model errors from egXML's children
+    assert not any(
+        i["element"] == "foobar" and "egXML" in i["message"] for i in content_errors
+    )
+
+
+def test_unknown_attribute(parsed_store, tmp_path):
+    """<p foobar='x'> produces unknown-attribute error for foobar."""
+    path = _make_tei(tmp_path, '<p foobar="x">text</p>')
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    attr_errors = [i for i in result["issues"] if i["rule"] == "unknown-attribute"]
+    assert len(attr_errors) >= 1
+    assert any("foobar" in i["message"] for i in attr_errors)
+
+
+def test_known_attribute_no_error(parsed_store, tmp_path):
+    """<p part='Y'> produces no attribute errors (part is valid on p)."""
+    path = _make_tei(tmp_path, '<p part="Y">text</p>')
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    attr_errors = [
+        i
+        for i in result["issues"]
+        if i["rule"] in ("unknown-attribute", "closed-value-list")
+    ]
+    assert len(attr_errors) == 0
+
+
+def test_xml_id_not_flagged(parsed_store, tmp_path):
+    """xml:id attribute is NOT flagged as unknown."""
+    xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        '<text><body><p xml:id="p1">text</p></body></text>'
+        "</TEI>"
+    )
+    p = tmp_path / "xmlid.xml"
+    p.write_text(xml, encoding="utf-8")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(p))
+    attr_errors = [i for i in result["issues"] if i["rule"] == "unknown-attribute"]
+    assert not any("xml:id" in i["message"] for i in attr_errors)
+
+
+def test_closed_value_list(parsed_store, tmp_path):
+    """p/@part with invalid value 'INVALID' produces closed-value-list error."""
+    path = _make_tei(tmp_path, '<p part="INVALID">text</p>')
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    cvl_errors = [i for i in result["issues"] if i["rule"] == "closed-value-list"]
+    assert len(cvl_errors) >= 1
+    assert any("INVALID" in i["message"] for i in cvl_errors)
+
+
+def test_closed_value_list_valid(parsed_store, tmp_path):
+    """p/@part='Y' (valid value from closed list) produces no error."""
+    path = _make_tei(tmp_path, '<p part="Y">text</p>')
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    cvl_errors = [i for i in result["issues"] if i["rule"] == "closed-value-list"]
+    assert len(cvl_errors) == 0
+
+
+def test_empty_element_flagged(parsed_store, tmp_path):
+    """<p></p> (empty, no text) produces empty-element error."""
+    path = _make_tei(tmp_path, "<p></p>")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    empty_errors = [i for i in result["issues"] if i["rule"] == "empty-element"]
+    assert len(empty_errors) >= 1
+    assert any(i["element"] == "p" for i in empty_errors)
+
+
+def test_empty_element_with_text_ok(parsed_store, tmp_path):
+    """<p>Hello</p> does NOT produce empty-element error."""
+    path = _make_tei(tmp_path, "<p>Hello</p>")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    empty_errors = [i for i in result["issues"] if i["rule"] == "empty-element"]
+    # p with text content should not be flagged
+    assert not any(i["element"] == "p" for i in empty_errors)
+
+
+def test_element_marked_empty_no_error(parsed_store, tmp_path):
+    """gap has empty:true in valid_children -- empty <gap/> should not produce error."""
+    path = _make_tei(tmp_path, "<p><gap/></p>")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    empty_errors = [i for i in result["issues"] if i["rule"] == "empty-element"]
+    assert not any(i["element"] == "gap" for i in empty_errors)
+
+
+def test_required_children_missing(parsed_store, tmp_path):
+    """body requires children (p, etc.) -- empty <body/> should flag required-children."""
+    xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        "<text><body></body></text>"
+        "</TEI>"
+    )
+    p = tmp_path / "reqchildren.xml"
+    p.write_text(xml, encoding="utf-8")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(p))
+    req_errors = [i for i in result["issues"] if i["rule"] == "required-children"]
+    assert len(req_errors) >= 1
+    assert any(i["element"] == "body" for i in req_errors)
