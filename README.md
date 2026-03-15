@@ -1,5 +1,9 @@
 # tei-mcp
 
+<p align="center">
+  <img src="banner.png" alt="tei-mcp — TEI P5 for AI agents" width="600">
+</p>
+
 An [MCP](https://modelcontextprotocol.io) server that helps AI agents read and write valid [TEI](https://tei-c.org/guidelines/) XML. It parses the TEI P5 specification and exposes 16 tools for element lookup, attribute resolution, content model expansion, nesting validation, document validation, and ODD customisation.
 
 ## Features
