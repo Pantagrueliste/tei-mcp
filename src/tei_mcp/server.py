@@ -18,11 +18,28 @@ from fastmcp.server.lifespan import lifespan  # noqa: E402
 
 import xml.etree.ElementTree as ET  # noqa: E402
 
+from tei_mcp import __version__  # noqa: E402
 from tei_mcp.customisation import apply_customisation  # noqa: E402
 from tei_mcp.download import ensure_odd_file  # noqa: E402
 from tei_mcp.parser import parse_odd  # noqa: E402
 from tei_mcp.store import OddStore, _build_deprecation_obj  # noqa: E402
 from tei_mcp.validator import TEIValidator  # noqa: E402
+
+BANNER = r"""
+  ╔╦╗╔═╗╦  ╔╦╗╔═╗╔═╗
+   ║ ║╣ ║  ║║║║  ╠═╝
+   ╩ ╚═╝╩  ╩ ╩╚═╝╩
+"""
+
+
+def _print_banner(store: OddStore) -> None:
+    """Print startup banner with version and spec stats to stderr."""
+    lines = BANNER.rstrip().split("\n")
+    lines.append("  TEI P5 for AI agents")
+    lines.append(f"  v{__version__} · {store.element_count} elements · "
+                 f"{store.class_count} classes · {store.module_count} modules")
+    lines.append("")
+    sys.stderr.write("\n".join(lines) + "\n")
 
 
 @lifespan
@@ -31,13 +48,7 @@ async def app_lifespan(server):
     odd_path = await ensure_odd_file()
     logger.info("Parsing ODD file: %s", odd_path)
     store = parse_odd(odd_path)
-    logger.info(
-        "Loaded %d elements, %d classes, %d macros, %d modules",
-        store.element_count,
-        store.class_count,
-        store.macro_count,
-        store.module_count,
-    )
+    _print_banner(store)
     validator = TEIValidator(store)
     try:
         yield {
