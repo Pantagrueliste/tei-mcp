@@ -720,6 +720,63 @@ class OddStore:
 
         return meta
 
+    def _get_attr_description(self, element_ident: str, attr_dict: dict) -> str:
+        """Look up the description text for an attribute from its source element or class."""
+        source = attr_dict.get("source", "")
+        attr_name = attr_dict.get("name", "")
+
+        if source == "local":
+            elem = self.elements.get(element_ident)
+            if elem is not None:
+                for a in elem.attributes:
+                    if a.ident == attr_name:
+                        return a.desc
+        else:
+            cls = self.classes.get(source)
+            if cls is not None:
+                for a in cls.attributes:
+                    if a.ident == attr_name:
+                        return a.desc
+        return ""
+
+    def suggest_attribute(
+        self, element_name: str, intent: str, max_results: int = 5
+    ) -> dict:
+        """Suggest relevant attributes for an element by keyword-matching intent against descriptions.
+
+        Returns top matches ranked by keyword overlap score, with ties broken
+        by local-before-inherited then alphabetical order.
+        """
+        all_attrs = self.resolve_attributes(element_name)
+        if "error" in all_attrs:
+            return all_attrs
+
+        keywords = set(re.findall(r"\w+", intent.lower()))
+        scored: list[tuple[int, int, str, dict, str]] = []
+        for attr in all_attrs["attributes"]:
+            desc = self._get_attr_description(all_attrs["element"], attr)
+            desc_words = set(re.findall(r"\w+", desc.lower()))
+            score = len(keywords & desc_words)
+            if score > 0:
+                is_local = 1 if attr["source"] == "local" else 0
+                scored.append((score, is_local, attr["name"], attr, desc))
+
+        scored.sort(key=lambda x: (-x[0], -x[1], x[2]))
+        results = [
+            {
+                "name": s[3]["name"],
+                "description": s[4],
+                "source": s[3]["source"],
+                "score": s[0],
+            }
+            for s in scored[:max_results]
+        ]
+        return {
+            "element": all_attrs["element"],
+            "intent": intent,
+            "suggestions": results,
+        }
+
     def check_nesting_batch(
         self, pairs: list[dict], recursive: bool = False
     ) -> dict:

@@ -239,6 +239,20 @@ async def valid_children(name: str, ctx: Context) -> dict:
 
 
 @mcp.tool()
+async def suggest_attribute(name: str, intent: str, ctx: Context) -> dict:
+    """Find the most relevant attributes for an element by describing what you want.
+
+    Searches attribute descriptions for keyword matches against your intent.
+    Returns the top 5 matching attributes with name, description, source class,
+    and relevance score.
+
+    Example: suggest_attribute("persName", "link to authority")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.suggest_attribute(name, intent)
+
+
+@mcp.tool()
 async def check_nesting_batch(
     pairs: list[dict],
     recursive: bool = False,
