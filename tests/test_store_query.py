@@ -692,3 +692,64 @@ def test_check_nesting_batch_malformed_pair(parsed_store):
     assert result["count"] == 3
     for r in result["results"]:
         assert "error" in r
+
+
+# --- suggest_attribute tests ---
+
+
+def test_suggest_attribute_basic(parsed_store):
+    """suggest_attribute('persName', 'reference') returns suggestions containing 'ref'."""
+    result = parsed_store.suggest_attribute("persName", "reference")
+    assert "error" not in result
+    assert result["element"] == "persName"
+    assert result["intent"] == "reference"
+    suggestion_names = [s["name"] for s in result["suggestions"]]
+    assert "ref" in suggestion_names
+
+
+def test_suggest_attribute_returns_description(parsed_store):
+    """Each suggestion has name, description, source, and score keys."""
+    result = parsed_store.suggest_attribute("persName", "reference")
+    assert len(result["suggestions"]) > 0
+    for s in result["suggestions"]:
+        assert "name" in s
+        assert "description" in s
+        assert "source" in s
+        assert "score" in s
+        assert isinstance(s["description"], str)
+        assert len(s["description"]) > 0
+
+
+def test_suggest_attribute_limit(parsed_store):
+    """suggest_attribute returns at most 5 results (max_results default)."""
+    result = parsed_store.suggest_attribute("persName", "a the of for")
+    assert len(result["suggestions"]) <= 5
+
+
+def test_suggest_attribute_no_matches(parsed_store):
+    """suggest_attribute('persName', 'xyznonexistent') returns empty suggestions list."""
+    result = parsed_store.suggest_attribute("persName", "xyznonexistent")
+    assert "error" not in result
+    assert result["suggestions"] == []
+
+
+def test_suggest_attribute_not_found(parsed_store):
+    """suggest_attribute('notreal', 'anything') returns error dict with suggestions."""
+    result = parsed_store.suggest_attribute("notreal", "anything")
+    assert "error" in result
+    assert "suggestions" in result
+
+
+def test_suggest_attribute_ranking(parsed_store):
+    """Higher keyword overlap scores higher -- attribute matching 2 keywords ranks above 1."""
+    # "identifier unique" should match xml:id (desc: "provides a unique identifier for the element")
+    # better than ref (desc: "provides a reference to a canonical identifier for the person")
+    # because xml:id desc contains both "identifier" and "unique"
+    result = parsed_store.suggest_attribute("persName", "unique identifier")
+    suggestions = result["suggestions"]
+    assert len(suggestions) >= 2
+    names = [s["name"] for s in suggestions]
+    assert "xml:id" in names
+    # xml:id should rank first since it matches both "unique" and "identifier"
+    assert suggestions[0]["name"] == "xml:id"
+    assert suggestions[0]["score"] >= 2

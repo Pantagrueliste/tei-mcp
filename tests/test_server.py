@@ -165,3 +165,19 @@ async def test_check_nesting_batch_tool(ctx):
     assert result["count"] == 2
     assert result["results"][0]["valid"] is True
     assert result["results"][1]["valid"] is True
+
+
+# --- suggest_attribute tool tests ---
+
+
+@pytest.mark.asyncio
+async def test_suggest_attribute_tool(ctx):
+    """MCP tool suggest_attribute delegates to store and returns suggestions."""
+    from tei_mcp.server import suggest_attribute
+
+    result = await suggest_attribute("persName", "reference", ctx)
+    assert "error" not in result
+    assert result["element"] == "persName"
+    assert result["intent"] == "reference"
+    suggestion_names = [s["name"] for s in result["suggestions"]]
+    assert "ref" in suggestion_names
