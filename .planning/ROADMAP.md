@@ -56,11 +56,12 @@ Plans:
   1. User calls valid_children("div") and receives a flat, deduplicated list of allowed child element names grouped by provenance (directly named vs via class) with required/optional flags
   2. User calls check_nesting with multiple parent-child pairs (e.g., [("p","div"), ("head","div"), ("note","body")]) in a single batch call and receives results for all pairs without multiple round-trips
   3. User calls suggest_attribute("persName", "link to authority") and receives relevant attributes (e.g., ref, key) with descriptions ranked by relevance to the intent keywords
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- valid_children tool with required flags and content model indicators (TDD)
+- [ ] 06-02-PLAN.md -- check_nesting_batch tool for multiple pair validation (TDD)
+- [ ] 06-03-PLAN.md -- suggest_attribute tool for intent-based attribute search (TDD)
 
 ### Phase 7: Core Validation
 **Goal**: An LLM can validate a complete TEI XML document or a single element in context, receiving structured issues with severity, location, and actionable messages
@@ -106,6 +107,6 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8
 | 3. Attribute Resolution and Class Hierarchy | v1.0 | 2/2 | Complete | 2026-03-14 |
 | 4. Content Models and Nesting Validation | v1.0 | 2/2 | Complete | 2026-03-15 |
 | 5. Deprecation Awareness | v2.0 | 1/2 | In progress | - |
-| 6. Enhanced Querying | v2.0 | 0/? | Not started | - |
+| 6. Enhanced Querying | v2.0 | 0/3 | Not started | - |
 | 7. Core Validation | v2.0 | 0/? | Not started | - |
 | 8. ODD Customisation | v2.0 | 0/? | Not started | - |
