@@ -310,3 +310,169 @@ def test_required_children_missing(parsed_store, tmp_path):
     req_errors = [i for i in result["issues"] if i["rule"] == "required-children"]
     assert len(req_errors) >= 1
     assert any(i["element"] == "body" for i in req_errors)
+
+
+# ---- Task 2: Reference integrity and deprecation checks ----
+
+
+def test_bare_hash_warning(parsed_store, tmp_path):
+    """<persName ref='#'>text</persName> produces ref-integrity warning with 'placeholder'."""
+    path = _make_tei(tmp_path, '<p><persName ref="#">name</persName></p>')
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    ref_issues = [i for i in result["issues"] if i["rule"] == "ref-integrity"]
+    assert len(ref_issues) >= 1
+    assert any(
+        i["severity"] == "warning" and "placeholder" in i["message"].lower()
+        for i in ref_issues
+    )
+
+
+def test_ref_target_not_found(parsed_store, tmp_path):
+    """<persName ref='#foo'>text</persName> where no xml:id='foo' produces error."""
+    path = _make_tei(tmp_path, '<p><persName ref="#foo">name</persName></p>')
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    ref_issues = [i for i in result["issues"] if i["rule"] == "ref-integrity"]
+    assert len(ref_issues) >= 1
+    assert any(
+        i["severity"] == "error" and "foo" in i["message"] for i in ref_issues
+    )
+
+
+def test_ref_target_found(parsed_store, tmp_path):
+    """<persName ref='#foo'>text</persName> where another element has xml:id='foo' -- no error."""
+    xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        '<text><body><p xml:id="foo">target</p>'
+        '<p><persName ref="#foo">name</persName></p></body></text>'
+        "</TEI>"
+    )
+    p = tmp_path / "reffound.xml"
+    p.write_text(xml, encoding="utf-8")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(p))
+    ref_issues = [i for i in result["issues"] if i["rule"] == "ref-integrity"]
+    assert len(ref_issues) == 0
+
+
+def test_multiple_refs_in_attr(parsed_store, tmp_path):
+    """target='#a #b' where only #a exists flags #b but not #a."""
+    xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        '<text><body><p xml:id="a">target</p>'
+        '<p><persName ref="#a #b">name</persName></p></body></text>'
+        "</TEI>"
+    )
+    p = tmp_path / "multirefs.xml"
+    p.write_text(xml, encoding="utf-8")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(p))
+    ref_issues = [i for i in result["issues"] if i["rule"] == "ref-integrity"]
+    # Should flag #b but not #a
+    assert any("b" in i["message"] for i in ref_issues)
+    assert not any(
+        i["severity"] == "error" and "'a'" in i["message"] for i in ref_issues
+    )
+
+
+def test_authority_file_ids(parsed_store, tmp_path):
+    """validate_file with authority_files includes xml:id values from those files."""
+    # Main doc references #person1, which only exists in the authority file
+    main_xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        '<text><body><p><persName ref="#person1">name</persName></p></body></text>'
+        "</TEI>"
+    )
+    auth_xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        '<person xml:id="person1"><persName>Someone</persName></person>'
+        "</TEI>"
+    )
+    main_path = tmp_path / "main.xml"
+    main_path.write_text(main_xml, encoding="utf-8")
+    auth_path = tmp_path / "persons.xml"
+    auth_path.write_text(auth_xml, encoding="utf-8")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    # Without authority file: should flag #person1
+    result_no_auth = v.validate_file(str(main_path))
+    ref_issues_no_auth = [
+        i for i in result_no_auth["issues"] if i["rule"] == "ref-integrity"
+    ]
+    assert any("person1" in i["message"] for i in ref_issues_no_auth)
+
+    # With authority file: should NOT flag #person1
+    result_with_auth = v.validate_file(
+        str(main_path), authority_files=[str(auth_path)]
+    )
+    ref_issues_with_auth = [
+        i for i in result_with_auth["issues"] if i["rule"] == "ref-integrity"
+    ]
+    assert not any("person1" in i["message"] for i in ref_issues_with_auth)
+
+
+def test_deprecation_warning_element(parsed_store, tmp_path):
+    """Deprecated element 're' (validUntil=2024-01-15) produces deprecation warning."""
+    # re is in model.common, so it's a valid child of body/div/p etc.
+    path = _make_tei(tmp_path, "<p><re/></p>")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    dep_issues = [i for i in result["issues"] if i["rule"] == "deprecation"]
+    assert len(dep_issues) >= 1
+    assert any(i["element"] == "re" for i in dep_issues)
+
+
+def test_deprecation_warning_attribute(parsed_store, tmp_path):
+    """Deprecated attribute 'name' on attRef (validUntil=2026-11-13) produces warning."""
+    # attRef is a member of att.ref (which has deprecated 'name' attr) and att.global
+    xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        '<text><body><p><attRef name="test"/></p></body></text>'
+        "</TEI>"
+    )
+    p = tmp_path / "deprattr.xml"
+    p.write_text(xml, encoding="utf-8")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(p))
+    dep_issues = [i for i in result["issues"] if i["rule"] == "deprecation"]
+    assert any(
+        "name" in i["message"].lower() and i["element"] == "attRef"
+        for i in dep_issues
+    )
+
+
+def test_non_deprecated_no_warning(parsed_store, tmp_path):
+    """Non-deprecated elements/attributes produce no deprecation issues."""
+    path = _make_tei(tmp_path, "<p>Hello</p>")
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(str(path))
+    dep_issues = [i for i in result["issues"] if i["rule"] == "deprecation"]
+    assert len(dep_issues) == 0
