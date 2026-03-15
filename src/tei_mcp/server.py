@@ -239,6 +239,27 @@ async def valid_children(name: str, ctx: Context) -> dict:
 
 
 @mcp.tool()
+async def check_nesting_batch(
+    pairs: list[dict],
+    recursive: bool = False,
+    ctx: Context = None,
+) -> dict:
+    """Check multiple parent-child nesting relationships in a single call.
+
+    Each pair is a dict with 'child' and 'parent' keys. The recursive flag
+    applies to all pairs (True = check reachability anywhere inside ancestor,
+    False = check direct parent-child only).
+
+    Returns results for all pairs. If a pair has a typo, that pair gets an
+    error with suggestions while other pairs still return valid results.
+
+    Example: check_nesting_batch([{"child": "p", "parent": "div"}, {"child": "head", "parent": "div"}])
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.check_nesting_batch(pairs, recursive=recursive)
+
+
+@mcp.tool()
 async def check_nesting(
     child: str,
     parent: str,

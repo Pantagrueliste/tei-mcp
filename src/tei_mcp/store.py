@@ -720,6 +720,23 @@ class OddStore:
 
         return meta
 
+    def check_nesting_batch(
+        self, pairs: list[dict], recursive: bool = False
+    ) -> dict:
+        """Check multiple parent-child nesting relationships in a single call.
+
+        Each pair is a dict with 'child' and 'parent' keys. The recursive flag
+        applies uniformly to all pairs. Per-pair errors are isolated.
+        """
+        results = []
+        for pair in pairs:
+            if not isinstance(pair, dict) or "child" not in pair or "parent" not in pair:
+                results.append({"error": "Each pair must be a dict with 'child' and 'parent' keys"})
+                continue
+            result = self.check_nesting(pair["child"], pair["parent"], recursive=recursive)
+            results.append(result)
+        return {"results": results, "count": len(results)}
+
     def _collect_direct_children(self, name: str) -> set[str]:
         """Collect the set of element idents that can appear as direct children."""
         elem = self.elements.get(name)
