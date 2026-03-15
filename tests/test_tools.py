@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 
@@ -11,7 +13,12 @@ class FakeContext:
     def __init__(self, store):
         from tei_mcp.validator import TEIValidator
 
-        self.lifespan_context = {"store": store, "validator": TEIValidator(store)}
+        self.lifespan_context = {
+            "store": store,
+            "validator": TEIValidator(store),
+            "custom_store": None,
+            "custom_validator": None,
+        }
 
 
 @pytest.fixture
@@ -29,10 +36,12 @@ from tei_mcp.server import (  # noqa: E402
     expand_content_model,
     list_attributes,
     list_module_elements,
+    load_customisation,
     lookup_class,
     lookup_element,
     lookup_macro,
     search,
+    unload_customisation,
     validate_document,
     validate_element,
 )
@@ -396,3 +405,88 @@ async def test_validate_element_tool_json(ctx):
     result = await validate_element(element_json, "p", ctx=ctx)
     assert isinstance(result, dict)
     assert "issues" in result
+
+
+# ---------------------------------------------------------------------------
+# ODD customisation integration tests
+# ---------------------------------------------------------------------------
+
+ODD_FIXTURE = str(Path(__file__).parent / "fixtures" / "test_custom.odd")
+
+
+@pytest.fixture
+def odd_ctx(parsed_store):
+    """Return a FakeContext with custom_store/custom_validator keys (initially None)."""
+    return FakeContext(parsed_store)
+
+
+@pytest.mark.asyncio
+async def test_load_customisation(odd_ctx):
+    """load_customisation with valid ODD path succeeds, returns element count."""
+    result = await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    assert isinstance(result, dict)
+    assert result["status"] == "loaded"
+    assert "elements" in result
+    assert "base_elements" in result
+    assert result["elements"] < result["base_elements"]
+
+
+@pytest.mark.asyncio
+async def test_unload_customisation(odd_ctx):
+    """After loading, unload_customisation clears the custom store."""
+    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    result = await unload_customisation(ctx=odd_ctx)
+    assert result["status"] == "unloaded"
+    assert odd_ctx.lifespan_context["custom_store"] is None
+    assert odd_ctx.lifespan_context["custom_validator"] is None
+
+
+@pytest.mark.asyncio
+async def test_use_odd_flag(odd_ctx):
+    """lookup_element with use_odd=True after loading ODD uses constrained store."""
+    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    # note was deleted in the ODD customisation
+    result = await lookup_element("note", odd_ctx, use_odd=True)
+    assert "error" in result
+
+
+@pytest.mark.asyncio
+async def test_use_odd_without_load(odd_ctx):
+    """Calling lookup_element with use_odd=True without loading ODD returns error."""
+    result = await lookup_element("p", odd_ctx, use_odd=True)
+    assert "error" in result
+    assert "load_customisation" in result["error"].lower() or "no odd" in result["error"].lower()
+
+
+@pytest.mark.asyncio
+async def test_use_odd_false_ignores_custom(odd_ctx):
+    """After loading ODD, lookup_element with use_odd=False still returns deleted element."""
+    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    # note was deleted in the ODD, but use_odd=False should still find it in base
+    result = await lookup_element("note", odd_ctx, use_odd=False)
+    assert "error" not in result
+    assert result["ident"] == "note"
+
+
+@pytest.mark.asyncio
+async def test_validate_document_use_odd(odd_ctx, tmp_path):
+    """validate_document with use_odd=True flags elements not in customised schema."""
+    # Document contains <note> which is deleted in the ODD
+    tei_xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        "<text><body><p>Hello</p><note>Deleted</note></body></text>"
+        "</TEI>"
+    )
+    p = tmp_path / "odd_test.xml"
+    p.write_text(tei_xml, encoding="utf-8")
+    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    result = await validate_document(str(p), ctx=odd_ctx, use_odd=True)
+    assert isinstance(result, dict)
+    assert "issues" in result
+    # There should be at least one issue about "note" being unknown
+    note_issues = [i for i in result["issues"] if "note" in i.get("element", "").lower()
+                   or "note" in i.get("message", "").lower()]
+    assert len(note_issues) >= 1
