@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Document Validation & Enhanced Querying
-status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-15T15:13:10.603Z"
+status: completed
+stopped_at: Phase 8 context gathered
+last_updated: "2026-03-15T15:54:08.659Z"
 last_activity: 2026-03-15 -- Completed 07-03 element validation and MCP tools
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting -- so it produces correct TEI markup without hallucinating the spec.
-**Current focus:** Phase 7 - Core Validation (Complete)
+**Current focus:** Phase 8 - ODD Customisation (In Progress)
 
 ## Current Position
 
-Phase: 7 of 8 (Core Validation)
-Plan: 3 of 3 complete
-Status: Phase Complete
-Last activity: 2026-03-15 -- Completed 07-03 element validation and MCP tools
+Phase: 8 of 8 (ODD Customisation)
+Plan: 1 of 2 complete
+Status: In Progress
+Last activity: 2026-03-15 -- Completed 08-01 ODD customisation core logic
 
-Progress: [██████████] 100%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [██████████] 100%
 | Phase 07 P01 | 2min | 1 task | 3 files |
 | Phase 07 P02 | 4min | 2 tasks | 2 files |
 | Phase 07 P03 | 3min | 2 tasks | 4 files |
+| Phase 08 P01 | 2min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,7 @@ Recent decisions affecting current work:
 - [07-02]: Warning for required-children (fuzzy detection); only ref/target checked for ref-integrity; bare '#' is warning not error
 - [Phase 07]: XML vs structured input auto-detected by leading '<' character in validate_element
 - [Phase 07]: MCP tool layer handles JSON string to dict conversion for validate_element structured input
+- [08-01]: Deep copy + filter pattern for constrained OddStore; only elements dict filtered; attDef merge via dataclasses.replace
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T15:13:10.600Z
-Stopped at: Completed 07-03-PLAN.md
-Resume file: None
+Last session: 2026-03-15T15:52:50Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: .planning/phases/08-odd-customisation/08-01-SUMMARY.md

@@ -86,10 +86,10 @@ Requirements for document validation and enhanced querying milestone.
 ### ODD Customisation
 
 - [ ] **ODDS-01**: User can load a project ODD customisation file to constrain validation to project-specific schema
-- [ ] **ODDS-02**: ODD parser handles moduleRef with include/except for element filtering
-- [ ] **ODDS-03**: ODD parser handles elementSpec mode="delete" to remove elements from the schema
-- [ ] **ODDS-04**: ODD parser handles elementSpec mode="change" for attribute modifications
-- [ ] **ODDS-05**: ODD-customised validation produces a separate OddStore instance (base store unchanged)
+- [x] **ODDS-02**: ODD parser handles moduleRef with include/except for element filtering
+- [x] **ODDS-03**: ODD parser handles elementSpec mode="delete" to remove elements from the schema
+- [x] **ODDS-04**: ODD parser handles elementSpec mode="change" for attribute modifications
+- [x] **ODDS-05**: ODD-customised validation produces a separate OddStore instance (base store unchanged)
 
 ## Future Requirements
 
@@ -164,10 +164,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QURY-03 | Phase 6 | Complete |
 | QURY-04 | Phase 6 | Complete |
 | ODDS-01 | Phase 8 | Pending |
-| ODDS-02 | Phase 8 | Pending |
-| ODDS-03 | Phase 8 | Pending |
-| ODDS-04 | Phase 8 | Pending |
-| ODDS-05 | Phase 8 | Pending |
+| ODDS-02 | Phase 8 | Complete |
+| ODDS-03 | Phase 8 | Complete |
+| ODDS-04 | Phase 8 | Complete |
+| ODDS-05 | Phase 8 | Complete |
 
 **Coverage:**
 - v1 requirements: 23 total (all complete)
