@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from lxml import etree
 
-from tei_mcp.store import OddStore
+from tei_mcp.store import OddStore, _build_deprecation_obj
 
 TEI_NS = "http://www.tei-c.org/ns/1.0"
+XML_NS = "http://www.w3.org/XML/1998/namespace"
 XML_NS_PREFIX = "{http://www.w3.org/XML/1998/namespace}"
 
 LIMITATIONS = {
@@ -67,6 +68,13 @@ class TEIValidator:
         root = tree.getroot()
         issues: list[dict] = []
 
+        # Collect xml:id values for reference integrity
+        id_set = self._collect_ids(root)
+        if authority_files:
+            for af in authority_files:
+                af_tree = etree.parse(af)
+                id_set |= self._collect_ids(af_tree.getroot())
+
         # Walk all elements
         for elem in root.iter(etree.Element):
             if not isinstance(elem.tag, str):
@@ -79,6 +87,8 @@ class TEIValidator:
             self._check_required_children(elem, tag, issues)
             self._check_attributes(elem, tag, issues)
             self._check_empty(elem, tag, issues)
+            self._check_refs(elem, tag, id_set, issues)
+            self._check_deprecation(elem, tag, issues)
 
         summary = self._build_summary(issues)
         return {
@@ -206,6 +216,114 @@ class TEIValidator:
                     "rule": "empty-element",
                 }
             )
+
+    def _collect_ids(self, root: etree._Element) -> set[str]:
+        """Collect all xml:id values from an element tree."""
+        ids: set[str] = set()
+        for elem in root.iter():
+            if not isinstance(elem.tag, str):
+                continue
+            xml_id = elem.get(f"{{{XML_NS}}}id")
+            if xml_id:
+                ids.add(xml_id)
+        return ids
+
+    def _check_refs(
+        self,
+        elem: etree._Element,
+        tag: str,
+        id_set: set[str],
+        issues: list[dict],
+    ) -> None:
+        """Check ref/target attribute targets against known xml:id values."""
+        for attr_name, attr_value in elem.attrib.items():
+            local_attr = _strip_ns_attr(attr_name)
+            if local_attr not in ("ref", "target"):
+                continue
+            if not attr_value:
+                continue
+            for ref_val in attr_value.split():
+                if ref_val == "#":
+                    issues.append(
+                        {
+                            "severity": "warning",
+                            "line": elem.sourceline,
+                            "element": tag,
+                            "message": (
+                                f"Bare '#' in @{local_attr} -- "
+                                "likely a forgotten placeholder"
+                            ),
+                            "rule": "ref-integrity",
+                        }
+                    )
+                elif ref_val.startswith("#"):
+                    target = ref_val[1:]
+                    if target not in id_set:
+                        issues.append(
+                            {
+                                "severity": "error",
+                                "line": elem.sourceline,
+                                "element": tag,
+                                "message": (
+                                    f"@{local_attr}='{ref_val}' -- "
+                                    f"target '{target}' not found in document"
+                                ),
+                                "rule": "ref-integrity",
+                            }
+                        )
+
+    def _check_deprecation(
+        self, elem: etree._Element, tag: str, issues: list[dict]
+    ) -> None:
+        """Check for deprecated elements and attributes."""
+        elem_def = self.store.get_element(tag)
+        if elem_def is None:
+            return
+
+        # Check element deprecation
+        if elem_def.valid_until:
+            dep = _build_deprecation_obj(
+                elem_def.valid_until, elem_def.deprecation_info
+            )
+            if dep is not None:
+                issues.append(
+                    {
+                        "severity": dep["severity"],
+                        "line": elem.sourceline,
+                        "element": tag,
+                        "message": (
+                            f"<{tag}> is deprecated "
+                            f"(validUntil {dep['valid_until']}). "
+                            f"{dep['info']}"
+                        ),
+                        "rule": "deprecation",
+                    }
+                )
+
+        # Check attribute deprecation
+        resolved = self.store.resolve_attributes(tag)
+        if "error" in resolved:
+            return
+        attr_map = {a["name"]: a for a in resolved["attributes"]}
+        for attr_name in elem.attrib:
+            local = _strip_ns_attr(attr_name)
+            if local in attr_map:
+                attr_def = attr_map[local]
+                dep_info = attr_def.get("deprecation")
+                if dep_info:
+                    issues.append(
+                        {
+                            "severity": dep_info["severity"],
+                            "line": elem.sourceline,
+                            "element": tag,
+                            "message": (
+                                f"Attribute @{local} on <{tag}> is deprecated "
+                                f"(validUntil {dep_info['valid_until']}). "
+                                f"{dep_info['info']}"
+                            ),
+                            "rule": "deprecation",
+                        }
+                    )
 
     def _build_summary(self, issues: list[dict]) -> dict:
         """Build summary counts from issue list."""
