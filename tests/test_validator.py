@@ -508,14 +508,14 @@ def test_validate_element_structured(parsed_store):
 
 
 def test_validate_element_invalid_nesting(parsed_store):
-    """validate_element('<fileDesc/>', parent='p') returns content-model error."""
+    """validate_element('<div><p>x</p></div>', parent='p') returns content-model error (div not child of p)."""
     from tei_mcp.validator import TEIValidator
 
     v = TEIValidator(parsed_store)
-    result = v.validate_element("<fileDesc/>", parent="p")
+    result = v.validate_element("<div><p>x</p></div>", parent="p")
     content_errors = [i for i in result["issues"] if i["rule"] == "content-model"]
     assert len(content_errors) >= 1
-    assert any("fileDesc" in i["message"] for i in content_errors)
+    assert any("div" in i["message"] for i in content_errors)
 
 
 def test_validate_element_invalid_attr(parsed_store):

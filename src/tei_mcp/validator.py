@@ -325,6 +325,175 @@ class TEIValidator:
                         }
                     )
 
+    def validate_element(self, element: str | dict, parent: str) -> dict:
+        """Validate a single element in context of a stated parent.
+
+        Args:
+            element: Either an XML snippet string (detected by leading '<')
+                     or a dict with keys 'name', 'attributes', 'children'.
+            parent: The parent element name for nesting validation.
+
+        Returns a dict with 'issues', 'summary', and 'limitations'.
+        All issues have line=None (no document context).
+        """
+        issues: list[dict] = []
+
+        # --- Parse input ---
+        if isinstance(element, str) and element.strip().startswith("<"):
+            # XML snippet
+            parsed = etree.fromstring(element.encode("utf-8"))
+            tag = _strip_ns(parsed.tag)
+            attrs = {_strip_ns_attr(k): v for k, v in parsed.attrib.items()}
+            lxml_elem = parsed
+        elif isinstance(element, dict):
+            tag = element["name"]
+            attrs = element.get("attributes", {})
+            lxml_elem = None
+        else:
+            return {
+                "error": "element must be an XML snippet (string starting with '<') "
+                "or a dict with 'name', 'attributes', 'children' keys"
+            }
+
+        # --- Nesting check against stated parent ---
+        vc = self.store.valid_children(parent)
+        if "error" not in vc and not vc["allows_any_element"]:
+            allowed = {c["name"] for c in vc["children"]}
+            if tag not in allowed and self.store.get_element(tag):
+                issues.append(
+                    {
+                        "severity": "error",
+                        "line": None,
+                        "element": tag,
+                        "message": f"<{tag}> is not allowed as child of <{parent}>",
+                        "rule": "content-model",
+                    }
+                )
+
+        # --- Attribute checks ---
+        resolved = self.store.resolve_attributes(tag)
+        if "error" not in resolved:
+            known_attrs = {a["name"]: a for a in resolved["attributes"]}
+            for attr_name, attr_value in attrs.items():
+                if attr_name not in known_attrs:
+                    issues.append(
+                        {
+                            "severity": "error",
+                            "line": None,
+                            "element": tag,
+                            "message": f"Attribute @{attr_name} is not valid on <{tag}>",
+                            "rule": "unknown-attribute",
+                        }
+                    )
+                else:
+                    attr_def = known_attrs[attr_name]
+                    if attr_def["closed"] and attr_def["values"]:
+                        if attr_value not in attr_def["values"]:
+                            issues.append(
+                                {
+                                    "severity": "error",
+                                    "line": None,
+                                    "element": tag,
+                                    "message": (
+                                        f"@{attr_name}='{attr_value}' not in allowed values: "
+                                        f"{attr_def['values']}"
+                                    ),
+                                    "rule": "closed-value-list",
+                                }
+                            )
+
+        # --- Empty check ---
+        elem_def = self.store.get_element(tag)
+        if elem_def:
+            vc_self = self.store.valid_children(tag)
+            if "error" not in vc_self and not vc_self["empty"]:
+                if lxml_elem is not None:
+                    has_children = len(lxml_elem) > 0
+                    has_text = lxml_elem.text and lxml_elem.text.strip()
+                else:
+                    children = element.get("children", [])
+                    has_children = len(children) > 0
+                    has_text = False  # structured input has no text info
+
+                if not has_children and not has_text:
+                    issues.append(
+                        {
+                            "severity": "error",
+                            "line": None,
+                            "element": tag,
+                            "message": f"<{tag}> is empty but its content model requires content",
+                            "rule": "empty-element",
+                        }
+                    )
+
+        # --- Deprecation check ---
+        if elem_def and elem_def.valid_until:
+            dep = _build_deprecation_obj(
+                elem_def.valid_until, elem_def.deprecation_info
+            )
+            if dep is not None:
+                issues.append(
+                    {
+                        "severity": dep["severity"],
+                        "line": None,
+                        "element": tag,
+                        "message": (
+                            f"<{tag}> is deprecated "
+                            f"(validUntil {dep['valid_until']}). "
+                            f"{dep['info']}"
+                        ),
+                        "rule": "deprecation",
+                    }
+                )
+
+        # Attribute deprecation
+        if "error" not in resolved:
+            attr_map = {a["name"]: a for a in resolved["attributes"]}
+            for attr_name in attrs:
+                if attr_name in attr_map:
+                    dep_info = attr_map[attr_name].get("deprecation")
+                    if dep_info:
+                        issues.append(
+                            {
+                                "severity": dep_info["severity"],
+                                "line": None,
+                                "element": tag,
+                                "message": (
+                                    f"Attribute @{attr_name} on <{tag}> is deprecated "
+                                    f"(validUntil {dep_info['valid_until']}). "
+                                    f"{dep_info['info']}"
+                                ),
+                                "rule": "deprecation",
+                            }
+                        )
+
+        # --- Content model checks on element's own children (XML snippet only) ---
+        if lxml_elem is not None:
+            vc_self = self.store.valid_children(tag)
+            if "error" not in vc_self and not vc_self["allows_any_element"]:
+                allowed_children = {c["name"] for c in vc_self["children"]}
+                for child in lxml_elem:
+                    if not isinstance(child.tag, str):
+                        continue
+                    child_tag = _strip_ns(child.tag)
+                    if child_tag not in allowed_children and self.store.get_element(child_tag):
+                        issues.append(
+                            {
+                                "severity": "error",
+                                "line": None,
+                                "element": child_tag,
+                                "message": f"<{child_tag}> is not allowed as child of <{tag}>",
+                                "rule": "content-model",
+                            }
+                        )
+
+        summary = self._build_summary(issues)
+        return {
+            "issues": issues,
+            "summary": summary,
+            "limitations": LIMITATIONS,
+        }
+
     def _build_summary(self, issues: list[dict]) -> dict:
         """Build summary counts from issue list."""
         by_severity = {"error": 0, "warning": 0, "info": 0}
