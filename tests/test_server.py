@@ -71,3 +71,66 @@ def test_main_callable():
     from tei_mcp.server import main
 
     assert callable(main)
+
+
+# --- Deprecation in tool response tests ---
+
+
+class _FakeContext:
+    """Minimal context stub providing lifespan_context with a store."""
+
+    def __init__(self, store):
+        self.lifespan_context = {"store": store}
+
+
+@pytest.fixture
+def ctx(test_odd_path: Path):
+    """Return a FakeContext wrapping a parsed store."""
+    from tei_mcp.parser import parse_odd
+
+    store = parse_odd(test_odd_path)
+    return _FakeContext(store)
+
+
+@pytest.mark.asyncio
+async def test_lookup_element_deprecated(ctx):
+    """lookup_element('re') returns deprecation object with expired=True."""
+    from tei_mcp.server import lookup_element
+
+    result = await lookup_element("re", ctx)
+    assert "deprecation" in result
+    depr = result["deprecation"]
+    assert depr["expired"] is True
+    assert depr["valid_until"] == "2024-01-15"
+    assert depr["severity"] == "error"
+    assert "<gi>entry</gi>" in depr["info"]
+
+
+@pytest.mark.asyncio
+async def test_lookup_element_not_deprecated(ctx):
+    """lookup_element('p') returns dict WITHOUT 'deprecation' key."""
+    from tei_mcp.server import lookup_element
+
+    result = await lookup_element("p", ctx)
+    assert "deprecation" not in result
+
+
+@pytest.mark.asyncio
+async def test_lookup_element_deprecated_attr_count(ctx):
+    """lookup_element('attRef') returns deprecated_attribute_count == 1."""
+    from tei_mcp.server import lookup_element
+
+    result = await lookup_element("attRef", ctx)
+    assert result["deprecated_attribute_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_lookup_class_deprecated_attr(ctx):
+    """lookup_class('att.ref') returns attributes with deprecation on 'name' attr."""
+    from tei_mcp.server import lookup_class
+
+    result = await lookup_class("att.ref", ctx)
+    attrs = result["attributes"]
+    name_attr = next(a for a in attrs if a["ident"] == "name")
+    assert "deprecation" in name_attr
+    assert name_attr["deprecation"]["valid_until"] == "2026-11-13"

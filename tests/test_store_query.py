@@ -520,3 +520,29 @@ def test_check_nesting_case_insensitive(parsed_store):
     assert result["valid"] is True
     assert result["child"] == "p"
     assert result["parent"] == "div"
+
+
+# --- Deprecation in resolve_attributes tests ---
+
+
+def test_resolve_attributes_deprecated(parsed_store):
+    """resolve_attributes('attRef') returns attr 'name' with deprecation object."""
+    result = parsed_store.resolve_attributes("attRef")
+    assert "error" not in result
+    attrs = result["attributes"]
+    name_attr = next(a for a in attrs if a["name"] == "name")
+    assert "deprecation" in name_attr
+    depr = name_attr["deprecation"]
+    assert depr["expired"] is False  # 2026-11-13 is future
+    assert depr["valid_until"] == "2026-11-13"
+    assert depr["severity"] == "warning"
+    assert "ident" in depr["info"]
+
+
+def test_resolve_attributes_no_deprecation(parsed_store):
+    """resolve_attributes('p') returns attr 'part' WITHOUT a 'deprecation' key."""
+    result = parsed_store.resolve_attributes("p")
+    assert "error" not in result
+    attrs = result["attributes"]
+    part_attr = next(a for a in attrs if a["name"] == "part")
+    assert "deprecation" not in part_attr
