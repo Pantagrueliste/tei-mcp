@@ -67,7 +67,7 @@ class TEIValidator:
         root = tree.getroot()
         issues: list[dict] = []
 
-        # Walk all elements (skeleton -- no check methods called yet)
+        # Walk all elements
         for elem in root.iter(etree.Element):
             if not isinstance(elem.tag, str):
                 continue
@@ -75,12 +75,137 @@ class TEIValidator:
             if not self.store.get_element(tag):
                 continue  # skip non-TEI elements
 
+            self._check_content_model(elem, tag, issues)
+            self._check_required_children(elem, tag, issues)
+            self._check_attributes(elem, tag, issues)
+            self._check_empty(elem, tag, issues)
+
         summary = self._build_summary(issues)
         return {
             "issues": issues,
             "summary": summary,
             "limitations": LIMITATIONS,
         }
+
+    def _check_content_model(
+        self, elem: etree._Element, tag: str, issues: list[dict]
+    ) -> None:
+        """Check that all child elements are allowed by the parent's content model."""
+        vc = self.store.valid_children(tag)
+        if "error" in vc:
+            return
+        if vc["allows_any_element"]:
+            return
+
+        allowed = {c["name"] for c in vc["children"]}
+
+        for child in elem:
+            if not isinstance(child.tag, str):
+                continue
+            child_tag = _strip_ns(child.tag)
+            if child_tag not in allowed and self.store.get_element(child_tag):
+                issues.append(
+                    {
+                        "severity": "error",
+                        "line": child.sourceline,
+                        "element": child_tag,
+                        "message": f"<{child_tag}> is not allowed as child of <{tag}>",
+                        "rule": "content-model",
+                    }
+                )
+
+    def _check_required_children(
+        self, elem: etree._Element, tag: str, issues: list[dict]
+    ) -> None:
+        """Check that elements with required children have at least one present."""
+        vc = self.store.valid_children(tag)
+        if "error" in vc:
+            return
+        if vc["empty"]:
+            return
+
+        required = {c["name"] for c in vc["children"] if c["required"]}
+        if not required:
+            return
+
+        actual = {_strip_ns(c.tag) for c in elem if isinstance(c.tag, str)}
+        has_text = elem.text and elem.text.strip()
+
+        # If none of the required children appear and no text content
+        if not required.intersection(actual) and not has_text:
+            issues.append(
+                {
+                    "severity": "warning",
+                    "line": elem.sourceline,
+                    "element": tag,
+                    "message": (
+                        f"<{tag}> is missing required children: "
+                        f"{', '.join(sorted(required))}"
+                    ),
+                    "rule": "required-children",
+                }
+            )
+
+    def _check_attributes(
+        self, elem: etree._Element, tag: str, issues: list[dict]
+    ) -> None:
+        """Check that all attributes are valid and closed value lists are respected."""
+        resolved = self.store.resolve_attributes(tag)
+        if "error" in resolved:
+            return
+
+        known_attrs = {a["name"]: a for a in resolved["attributes"]}
+
+        for attr_name in elem.attrib:
+            local = _strip_ns_attr(attr_name)
+            if local not in known_attrs:
+                issues.append(
+                    {
+                        "severity": "error",
+                        "line": elem.sourceline,
+                        "element": tag,
+                        "message": f"Attribute @{local} is not valid on <{tag}>",
+                        "rule": "unknown-attribute",
+                    }
+                )
+            else:
+                attr_def = known_attrs[local]
+                if attr_def["closed"] and attr_def["values"]:
+                    value = elem.get(attr_name)
+                    if value not in attr_def["values"]:
+                        issues.append(
+                            {
+                                "severity": "error",
+                                "line": elem.sourceline,
+                                "element": tag,
+                                "message": (
+                                    f"@{local}='{value}' not in allowed values: "
+                                    f"{attr_def['values']}"
+                                ),
+                                "rule": "closed-value-list",
+                            }
+                        )
+
+    def _check_empty(
+        self, elem: etree._Element, tag: str, issues: list[dict]
+    ) -> None:
+        """Check that non-empty content model elements have content."""
+        vc = self.store.valid_children(tag)
+        if "error" in vc:
+            return
+        if vc["empty"]:
+            return
+
+        if len(elem) == 0 and (not elem.text or not elem.text.strip()):
+            issues.append(
+                {
+                    "severity": "error",
+                    "line": elem.sourceline,
+                    "element": tag,
+                    "message": f"<{tag}> is empty but its content model requires content",
+                    "rule": "empty-element",
+                }
+            )
 
     def _build_summary(self, issues: list[dict]) -> dict:
         """Build summary counts from issue list."""
