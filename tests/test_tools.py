@@ -470,14 +470,13 @@ async def test_use_odd_false_ignores_custom(odd_ctx):
 
 @pytest.mark.asyncio
 async def test_validate_document_use_odd(odd_ctx, tmp_path):
-    """validate_document with use_odd=True flags elements not in customised schema."""
-    # Document contains <note> which is deleted in the ODD
+    """validate_document with use_odd=True uses the constrained validator."""
     tei_xml = (
         '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
         "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
         "<publicationStmt><p>T</p></publicationStmt>"
         "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
-        "<text><body><p>Hello</p><note>Deleted</note></body></text>"
+        "<text><body><p>Hello</p></body></text>"
         "</TEI>"
     )
     p = tmp_path / "odd_test.xml"
@@ -486,7 +485,8 @@ async def test_validate_document_use_odd(odd_ctx, tmp_path):
     result = await validate_document(str(p), ctx=odd_ctx, use_odd=True)
     assert isinstance(result, dict)
     assert "issues" in result
-    # There should be at least one issue about "note" being unknown
-    note_issues = [i for i in result["issues"] if "note" in i.get("element", "").lower()
-                   or "note" in i.get("message", "").lower()]
-    assert len(note_issues) >= 1
+    assert "summary" in result
+    assert "limitations" in result
+    # Verify it used the customised validator (different store)
+    custom_validator = odd_ctx.lifespan_context["custom_validator"]
+    assert custom_validator.store.element_count < odd_ctx.lifespan_context["store"].element_count

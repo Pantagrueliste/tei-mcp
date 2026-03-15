@@ -16,6 +16,9 @@ from dataclasses import asdict  # noqa: E402
 from fastmcp import Context, FastMCP  # noqa: E402
 from fastmcp.server.lifespan import lifespan  # noqa: E402
 
+import xml.etree.ElementTree as ET  # noqa: E402
+
+from tei_mcp.customisation import apply_customisation  # noqa: E402
 from tei_mcp.download import ensure_odd_file  # noqa: E402
 from tei_mcp.parser import parse_odd  # noqa: E402
 from tei_mcp.store import OddStore, _build_deprecation_obj  # noqa: E402
@@ -37,23 +40,88 @@ async def app_lifespan(server):
     )
     validator = TEIValidator(store)
     try:
-        yield {"store": store, "validator": validator}
+        yield {
+            "store": store,
+            "validator": validator,
+            "custom_store": None,
+            "custom_validator": None,
+        }
     finally:
         logger.info("Server shutting down")
 
 
 mcp = FastMCP("tei-mcp", lifespan=app_lifespan)
 
+
+def _get_store(ctx: Context, use_odd: bool) -> OddStore:
+    """Return the customised or base OddStore depending on use_odd flag."""
+    if use_odd:
+        custom = ctx.lifespan_context.get("custom_store")
+        if custom is None:
+            raise ValueError("No ODD customisation loaded. Call load_customisation first.")
+        return custom
+    return ctx.lifespan_context["store"]
+
+
+def _get_validator(ctx: Context, use_odd: bool) -> TEIValidator:
+    """Return the customised or base TEIValidator depending on use_odd flag."""
+    if use_odd:
+        custom = ctx.lifespan_context.get("custom_validator")
+        if custom is None:
+            raise ValueError("No ODD customisation loaded. Call load_customisation first.")
+        return custom
+    return ctx.lifespan_context["validator"]
+
+
 @mcp.tool()
-async def lookup_element(name: str, ctx: Context) -> dict:
+async def load_customisation(odd_path: str, ctx: Context) -> dict:
+    """Load a project ODD customisation file to constrain validation.
+
+    Takes a file path to a TEI ODD customisation file, parses it, and creates
+    a constrained OddStore. Returns element count comparison (customised vs base).
+    Set use_odd=True on other tools to query the customised schema.
+    """
+    base_store = ctx.lifespan_context["store"]
+    try:
+        custom_store = apply_customisation(base_store, odd_path)
+    except (ValueError, FileNotFoundError, ET.ParseError) as e:
+        return {"error": str(e)}
+    custom_validator = TEIValidator(custom_store)
+    ctx.lifespan_context["custom_store"] = custom_store
+    ctx.lifespan_context["custom_validator"] = custom_validator
+    return {
+        "status": "loaded",
+        "elements": custom_store.element_count,
+        "base_elements": base_store.element_count,
+    }
+
+
+@mcp.tool()
+async def unload_customisation(ctx: Context) -> dict:
+    """Clear the loaded ODD customisation.
+
+    After unloading, all tools return to using the full TEI P5 spec.
+    Calling a tool with use_odd=True after unloading will return an error.
+    """
+    ctx.lifespan_context["custom_store"] = None
+    ctx.lifespan_context["custom_validator"] = None
+    return {"status": "unloaded"}
+
+
+@mcp.tool()
+async def lookup_element(name: str, ctx: Context, use_odd: bool = False) -> dict:
     """Look up a TEI element by name (case-insensitive).
 
     Returns the element's ident, module, gloss, desc, classes, attributes,
     and content_raw. If not found, returns an error with suggestions.
+    Set use_odd=True to query the customised schema.
 
     Example: lookup_element("persName")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     elem = store.get_element_ci(name)
     if elem is None:
         return {
@@ -84,16 +152,20 @@ async def lookup_element(name: str, ctx: Context) -> dict:
 
 
 @mcp.tool()
-async def lookup_class(name: str, ctx: Context) -> dict:
+async def lookup_class(name: str, ctx: Context, use_odd: bool = False) -> dict:
     """Look up a TEI class by name (case-insensitive).
 
     Returns the class's ident, module, class_type, gloss, desc, classes,
     attributes, and a computed members list of element/subclass idents.
     If not found, returns an error with suggestions.
+    Set use_odd=True to query the customised schema.
 
     Example: lookup_class("att.global")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     cls_def = store.get_class_ci(name)
     if cls_def is None:
         return {
@@ -113,15 +185,19 @@ async def lookup_class(name: str, ctx: Context) -> dict:
 
 
 @mcp.tool()
-async def lookup_macro(name: str, ctx: Context) -> dict:
+async def lookup_macro(name: str, ctx: Context, use_odd: bool = False) -> dict:
     """Look up a TEI macro by name (case-insensitive).
 
     Returns the macro's ident, module, gloss, desc, and content_raw.
     If not found, returns an error with suggestions.
+    Set use_odd=True to query the customised schema.
 
     Example: lookup_macro("macro.paraContent")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     macro_def = store.get_macro_ci(name)
     if macro_def is None:
         return {
@@ -132,15 +208,19 @@ async def lookup_macro(name: str, ctx: Context) -> dict:
 
 
 @mcp.tool()
-async def list_module_elements(module: str, ctx: Context) -> dict:
+async def list_module_elements(module: str, ctx: Context, use_odd: bool = False) -> dict:
     """List all elements in a TEI module.
 
     Returns the module's ident, gloss, and a list of {ident, gloss} pairs
     for each element. If module not found, returns an error with suggestions.
+    Set use_odd=True to query the customised schema.
 
     Example: list_module_elements("namesdates")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     mod_def = store.get_module_ci(module)
     if mod_def is None:
         return {
@@ -157,21 +237,26 @@ async def search(
     pattern: str,
     entity_type: str | None = None,
     max_results: int = 50,
+    use_odd: bool = False,
     ctx: Context = None,
 ) -> list[dict] | dict:
     """Search TEI entities by regex pattern across ident, gloss, and desc.
 
     Each result includes type, ident, gloss, and match_field (which field
     matched). Optionally filter by entity_type and limit results.
+    Set use_odd=True to query the customised schema.
 
     Example: search("pers.*Name")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.search(pattern, entity_type, max_results)
 
 
 @mcp.tool()
-async def list_attributes(name: str, ctx: Context) -> dict:
+async def list_attributes(name: str, ctx: Context, use_odd: bool = False) -> dict:
     """List all attributes for a TEI element or class, including inherited attributes.
 
     Returns a flat list of attributes with local attributes first, then inherited
@@ -182,15 +267,19 @@ async def list_attributes(name: str, ctx: Context) -> dict:
 
     Accepts both element names (e.g., "persName") and att.* class names
     (e.g., "att.global"). Case-insensitive lookup with suggestions on not-found.
+    Set use_odd=True to query the customised schema.
 
     Example: list_attributes("persName")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.resolve_attributes(name)
 
 
 @mcp.tool()
-async def class_membership_chain(name: str, ctx: Context) -> dict:
+async def class_membership_chain(name: str, ctx: Context, use_odd: bool = False) -> dict:
     """Show the full class membership hierarchy for a TEI element or class.
 
     Returns separate chains for each direct class membership. Each chain walks
@@ -200,15 +289,19 @@ async def class_membership_chain(name: str, ctx: Context) -> dict:
     Accepts both element names (e.g., "persName") and class names
     (e.g., "model.nameLike.agent"). Case-insensitive lookup with suggestions
     on not-found.
+    Set use_odd=True to query the customised schema.
 
     Example: class_membership_chain("persName")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.get_class_chain(name)
 
 
 @mcp.tool()
-async def expand_content_model(name: str, ctx: Context) -> dict:
+async def expand_content_model(name: str, ctx: Context, use_odd: bool = False) -> dict:
     """Expand the content model for a TEI element or macro into a structured tree.
 
     Returns a nested JSON tree preserving structural semantics (sequence,
@@ -219,38 +312,50 @@ async def expand_content_model(name: str, ctx: Context) -> dict:
     Accepts both element names (e.g., "div", "p") and macro names
     (e.g., "macro.paraContent"). Case-insensitive lookup with suggestions
     on not-found.
+    Set use_odd=True to query the customised schema.
 
     Example: expand_content_model("div")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.expand_content_model(name)
 
 
 @mcp.tool()
-async def valid_children(name: str, ctx: Context) -> dict:
+async def valid_children(name: str, ctx: Context, use_odd: bool = False) -> dict:
     """List all elements that can appear as direct children of the given element.
 
     Returns a flat, deduplicated list of child element names with required/optional
     flags. Also indicates whether the element allows text content, any element,
     or has an empty content model.
+    Set use_odd=True to query the customised schema.
 
     Example: valid_children("div")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.valid_children(name)
 
 
 @mcp.tool()
-async def suggest_attribute(name: str, intent: str, ctx: Context) -> dict:
+async def suggest_attribute(name: str, intent: str, ctx: Context, use_odd: bool = False) -> dict:
     """Find the most relevant attributes for an element by describing what you want.
 
     Searches attribute descriptions for keyword matches against your intent.
     Returns the top 5 matching attributes with name, description, source class,
     and relevance score.
+    Set use_odd=True to query the customised schema.
 
     Example: suggest_attribute("persName", "link to authority")
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.suggest_attribute(name, intent)
 
 
@@ -258,6 +363,7 @@ async def suggest_attribute(name: str, intent: str, ctx: Context) -> dict:
 async def check_nesting_batch(
     pairs: list[dict],
     recursive: bool = False,
+    use_odd: bool = False,
     ctx: Context = None,
 ) -> dict:
     """Check multiple parent-child nesting relationships in a single call.
@@ -268,10 +374,14 @@ async def check_nesting_batch(
 
     Returns results for all pairs. If a pair has a typo, that pair gets an
     error with suggestions while other pairs still return valid results.
+    Set use_odd=True to query the customised schema.
 
     Example: check_nesting_batch([{"child": "p", "parent": "div"}, {"child": "head", "parent": "div"}])
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.check_nesting_batch(pairs, recursive=recursive)
 
 
@@ -280,6 +390,7 @@ async def check_nesting(
     child: str,
     parent: str,
     recursive: bool = False,
+    use_odd: bool = False,
     ctx: Context = None,
 ) -> dict:
     """Check whether a TEI element can appear inside another element.
@@ -293,11 +404,15 @@ async def check_nesting(
 
     The reason field explains why nesting is valid or invalid -- useful
     for understanding TEI structure and self-correcting markup.
+    Set use_odd=True to query the customised schema.
 
     Example: check_nesting("p", "div")
     Example: check_nesting("persName", "body", recursive=True)
     """
-    store: OddStore = ctx.lifespan_context["store"]
+    try:
+        store: OddStore = _get_store(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return store.check_nesting(child, parent, recursive=recursive)
 
 
@@ -305,12 +420,14 @@ async def check_nesting(
 async def validate_document(
     file_path: str,
     authority_files: list[str] | None = None,
+    use_odd: bool = False,
     ctx: Context = None,
 ) -> dict:
     """Validate a TEI XML document against the TEI P5 specification.
 
     Checks content model compliance, attribute validity, closed value lists,
     empty required-content elements, reference integrity, and deprecation usage.
+    Set use_odd=True to query the customised schema.
 
     Args:
         file_path: Path to the TEI XML file to validate.
@@ -320,7 +437,10 @@ async def validate_document(
     Returns a dict with 'issues' (list of validation issues), 'summary'
     (counts by severity and rule), and 'limitations' (what was NOT checked).
     """
-    validator: TEIValidator = ctx.lifespan_context["validator"]
+    try:
+        validator: TEIValidator = _get_validator(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     return validator.validate_file(file_path, authority_files)
 
 
@@ -328,12 +448,14 @@ async def validate_document(
 async def validate_element(
     element: str,
     parent: str,
+    use_odd: bool = False,
     ctx: Context = None,
 ) -> dict:
     """Validate a single TEI element in context for incremental editing.
 
     Accepts a raw XML snippet (e.g., '<add place="above">text</add>') or
     a JSON-formatted string with keys 'name', 'attributes', 'children'.
+    Set use_odd=True to query the customised schema.
 
     Args:
         element: XML snippet string or JSON string with element details.
@@ -343,7 +465,10 @@ async def validate_element(
     """
     import json
 
-    validator: TEIValidator = ctx.lifespan_context["validator"]
+    try:
+        validator: TEIValidator = _get_validator(ctx, use_odd)
+    except ValueError as e:
+        return {"error": str(e)}
     # Try JSON parse for structured input
     if not element.strip().startswith("<"):
         try:
