@@ -21,7 +21,7 @@ def test_parse_odd_entity_counts(test_odd_path: Path):
     from tei_mcp.parser import parse_odd
 
     store = parse_odd(test_odd_path)
-    assert store.element_count == 15
+    assert store.element_count == 16
     assert store.class_count == 14
     assert store.macro_count == 1
     assert store.module_count == 4

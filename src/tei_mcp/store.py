@@ -628,6 +628,98 @@ class OddStore:
             "reason": f"'{child}' is not reachable inside '{ancestor}'",
         }
 
+    # --- Valid children query ---
+
+    def valid_children(self, name: str) -> dict:
+        """Return a flat deduplicated list of allowed child elements with metadata.
+
+        Response shape: {"element": str, "children": [{"name": str, "required": bool}],
+        "allows_text": bool, "allows_any_element": bool, "empty": bool}
+        """
+        elem = self.get_element_ci(name)
+        if elem is None:
+            return {
+                "error": f"'{name}' not found",
+                "suggestions": self.suggest_names(name, "element"),
+            }
+
+        tree = self._parse_content_tree(elem.content_raw)
+        children_dict: dict[str, bool] = {}  # name -> required
+        meta = self._collect_children_with_metadata(tree, children_dict, context_min=1)
+
+        children_list = sorted(
+            [{"name": n, "required": r} for n, r in children_dict.items()],
+            key=lambda c: c["name"],
+        )
+
+        return {
+            "element": elem.ident,
+            "children": children_list,
+            "allows_text": meta["has_text"],
+            "allows_any_element": meta["has_any"],
+            "empty": meta["empty"],
+        }
+
+    def _collect_children_with_metadata(
+        self, node: dict, result: dict[str, bool], context_min: int = 1
+    ) -> dict:
+        """Walk content tree collecting child elements with required flags.
+
+        Returns meta dict {"has_text": bool, "has_any": bool, "empty": bool}.
+        """
+        meta = {"has_text": False, "has_any": False, "empty": False}
+        node_type = node.get("type")
+
+        if node_type == "element":
+            effective_min = node.get("min", 1) * context_min
+            name = node["name"]
+            if name in result:
+                # If either existing or new says required, keep required
+                result[name] = result[name] or (effective_min > 0)
+            else:
+                result[name] = effective_min > 0
+
+        elif node_type == "classRef":
+            effective_min = node.get("min", 1) * context_min
+            for elem in node.get("elements", []):
+                name = elem["name"]
+                required = effective_min > 0
+                if name in result:
+                    result[name] = result[name] or required
+                else:
+                    result[name] = required
+
+        elif node_type == "text":
+            meta["has_text"] = True
+
+        elif node_type == "anyElement":
+            meta["has_any"] = True
+
+        elif node_type == "empty":
+            meta["empty"] = True
+
+        elif node_type == "alternation":
+            # Children of alternation are never required (any one suffices)
+            for child in node.get("children", []):
+                child_meta = self._collect_children_with_metadata(
+                    child, result, context_min=0
+                )
+                meta["has_text"] = meta["has_text"] or child_meta["has_text"]
+                meta["has_any"] = meta["has_any"] or child_meta["has_any"]
+                meta["empty"] = meta["empty"] or child_meta["empty"]
+
+        elif node_type == "sequence":
+            seq_min = node.get("min", 1) * context_min
+            for child in node.get("children", []):
+                child_meta = self._collect_children_with_metadata(
+                    child, result, context_min=seq_min
+                )
+                meta["has_text"] = meta["has_text"] or child_meta["has_text"]
+                meta["has_any"] = meta["has_any"] or child_meta["has_any"]
+                meta["empty"] = meta["empty"] or child_meta["empty"]
+
+        return meta
+
     def _collect_direct_children(self, name: str) -> set[str]:
         """Collect the set of element idents that can appear as direct children."""
         elem = self.elements.get(name)

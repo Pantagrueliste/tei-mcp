@@ -225,6 +225,20 @@ async def expand_content_model(name: str, ctx: Context) -> dict:
 
 
 @mcp.tool()
+async def valid_children(name: str, ctx: Context) -> dict:
+    """List all elements that can appear as direct children of the given element.
+
+    Returns a flat, deduplicated list of child element names with required/optional
+    flags. Also indicates whether the element allows text content, any element,
+    or has an empty content model.
+
+    Example: valid_children("div")
+    """
+    store: OddStore = ctx.lifespan_context["store"]
+    return store.valid_children(name)
+
+
+@mcp.tool()
 async def check_nesting(
     child: str,
     parent: str,
