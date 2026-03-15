@@ -107,6 +107,6 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8
 | 3. Attribute Resolution and Class Hierarchy | v1.0 | 2/2 | Complete | 2026-03-14 |
 | 4. Content Models and Nesting Validation | v1.0 | 2/2 | Complete | 2026-03-15 |
 | 5. Deprecation Awareness | v2.0 | 1/2 | In progress | - |
-| 6. Enhanced Querying | 1/3 | In Progress|  | - |
+| 6. Enhanced Querying | 2/3 | In Progress|  | - |
 | 7. Core Validation | v2.0 | 0/? | Not started | - |
 | 8. ODD Customisation | v2.0 | 0/? | Not started | - |
