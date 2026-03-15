@@ -2,12 +2,20 @@
 name = "tei-mcp"
 version = "0.1.0"
 description = "MCP server for querying the TEI P5 ODD specification"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
+keywords = ["tei", "mcp", "digital-humanities", "xml", "odd"]
 dependencies = [
     "fastmcp>=3.1.0",
     "httpx>=0.27",
     "lxml>=5.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Pantagrueliste/tei-mcp"
+Repository = "https://github.com/Pantagrueliste/tei-mcp"
+Issues = "https://github.com/Pantagrueliste/tei-mcp/issues"
 
 [project.scripts]
 tei-mcp = "tei_mcp.server:main"

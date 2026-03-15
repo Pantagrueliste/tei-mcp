@@ -1,5 +1,11 @@
+# Claude Code / GSD workflow
 .planning/
+.claude/
+
+# Runtime data
 src/tei_mcp/data/p5subset.xml
+
+# Python
 __pycache__/
 *.pyc
 .venv/
