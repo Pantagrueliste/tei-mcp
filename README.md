@@ -2,6 +2,8 @@
 
 An [MCP](https://modelcontextprotocol.io) server that helps AI agents read and write valid [TEI](https://tei-c.org/guidelines/) XML. It parses the TEI P5 specification and exposes 16 tools for element lookup, attribute resolution, content model expansion, nesting validation, document validation, and ODD customisation.
 
+[![tei-mcp MCP server](https://glama.ai/mcp/servers/Pantagrueliste/tei-mcp/badges/card.svg)](https://glama.ai/mcp/servers/Pantagrueliste/tei-mcp)
+
 ## Features
 
 - **Element, class, macro, and module lookup** with case-insensitive matching and typo suggestions
