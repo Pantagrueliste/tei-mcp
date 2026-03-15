@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Document Validation & Enhanced Querying
 status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-15T12:38:01.107Z"
-last_activity: 2026-03-15 -- Completed 05-02 deprecation surfacing in tool responses
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-03-15T13:48:00.000Z"
+last_activity: 2026-03-15 -- Completed 06-01 valid_children tool
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 5
+  completed_plans: 3
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting -- so it produces correct TEI markup without hallucinating the spec.
-**Current focus:** Phase 5 - Deprecation Awareness
+**Current focus:** Phase 6 - Enhanced Querying
 
 ## Current Position
 
-Phase: 5 of 8 (Deprecation Awareness) -- first phase of v2.0
-Plan: 2 of 2 complete (phase complete)
+Phase: 6 of 8 (Enhanced Querying)
+Plan: 1 of 3 complete
 Status: Executing
-Last activity: 2026-03-15 -- Completed 05-02 deprecation surfacing in tool responses
+Last activity: 2026-03-15 -- Completed 06-01 valid_children tool
 
-Progress: [██████████] 100%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100%
 
 *Updated after each plan completion*
 | Phase 05 P02 | 2min | 2 tasks | 4 files |
+| Phase 06 P01 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,7 @@ Recent decisions affecting current work:
 - [v2.0 research]: ODD customisation produces NEW OddStore instance, never mutates base
 - [05-01]: re.sub for namespace stripping in _inner_xml; generic fallback for missing deprecationInfo desc
 - [05-02]: Import _build_deprecation_obj from store into server (single source of truth); raw fields popped from asdict output
+- [06-01]: context_min=0 in alternation makes children optional; anyElement returns flag instead of listing all elements; children sorted alphabetically
 
 ### Pending Todos
 
@@ -77,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T12:38:00.325Z
-Stopped at: Completed 05-02-PLAN.md
-Resume file: None
+Last session: 2026-03-15T13:48:00.000Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: .planning/phases/06-enhanced-querying/06-01-SUMMARY.md
