@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Document Validation & Enhanced Querying
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-15T12:31:38Z"
-last_activity: 2026-03-15 -- Completed 05-01 deprecation data extraction
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-15T12:38:01.107Z"
+last_activity: 2026-03-15 -- Completed 05-02 deprecation surfacing in tool responses
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 12
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 5 of 8 (Deprecation Awareness) -- first phase of v2.0
-Plan: 1 of 2 complete
+Plan: 2 of 2 complete (phase complete)
 Status: Executing
-Last activity: 2026-03-15 -- Completed 05-01 deprecation data extraction
+Last activity: 2026-03-15 -- Completed 05-02 deprecation surfacing in tool responses
 
-Progress: [█░░░░░░░░░] 12%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -44,9 +44,10 @@ Progress: [█░░░░░░░░░] 12%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1-4 (v1.0) | 8 | -- | -- |
-| 5 | 1/2 | 3min | 3min |
+| 5 | 2/2 | 5min | 2.5min |
 
 *Updated after each plan completion*
+| Phase 05 P02 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,7 @@ Recent decisions affecting current work:
 - [v2.0 research]: validator.py as new module, consumer of OddStore not extension
 - [v2.0 research]: ODD customisation produces NEW OddStore instance, never mutates base
 - [05-01]: re.sub for namespace stripping in _inner_xml; generic fallback for missing deprecationInfo desc
+- [05-02]: Import _build_deprecation_obj from store into server (single source of truth); raw fields popped from asdict output
 
 ### Pending Todos
 
@@ -75,6 +77,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T12:31:38Z
-Stopped at: Completed 05-01-PLAN.md
-Resume file: .planning/phases/05-deprecation-awareness/05-01-SUMMARY.md
+Last session: 2026-03-15T12:38:00.325Z
+Stopped at: Completed 05-02-PLAN.md
+Resume file: None

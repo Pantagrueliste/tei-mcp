@@ -71,8 +71,8 @@ Requirements for document validation and enhanced querying milestone.
 
 ### Deprecation
 
-- [ ] **DEPR-01**: list_attributes flags deprecated attributes with a "deprecated" field, validUntil date, and migration guidance
-- [ ] **DEPR-02**: lookup_element surfaces deprecation status for deprecated elements
+- [x] **DEPR-01**: list_attributes flags deprecated attributes with a "deprecated" field, validUntil date, and migration guidance
+- [x] **DEPR-02**: lookup_element surfaces deprecation status for deprecated elements
 - [ ] **DEPR-03**: validate_document emits warnings for deprecated attribute and element usage
 - [x] **DEPR-04**: Parser extracts @validUntil and desc type="deprecationInfo" from ODD spec into model fields
 
@@ -155,8 +155,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VALD-08 | Phase 7 | Pending |
 | VALD-09 | Phase 7 | Pending |
 | VALD-10 | Phase 7 | Pending |
-| DEPR-01 | Phase 5 | Pending |
-| DEPR-02 | Phase 5 | Pending |
+| DEPR-01 | Phase 5 | Complete |
+| DEPR-02 | Phase 5 | Complete |
 | DEPR-03 | Phase 7 | Pending |
 | DEPR-04 | Phase 5 | Complete |
 | QURY-01 | Phase 6 | Pending |
