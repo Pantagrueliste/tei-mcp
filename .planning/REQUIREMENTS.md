@@ -81,7 +81,7 @@ Requirements for document validation and enhanced querying milestone.
 - [x] **QURY-01**: User can call valid_children with a parent element name and receive a flat, deduplicated list of allowed child element names
 - [x] **QURY-02**: valid_children groups results by provenance (directly named vs via class membership) and flags required vs optional
 - [x] **QURY-03**: User can call check_nesting with multiple parent-child pairs in a single batch call and receive results for all pairs
-- [ ] **QURY-04**: User can call suggest_attribute with an element name and intent keyword to find the most relevant attributes with descriptions
+- [x] **QURY-04**: User can call suggest_attribute with an element name and intent keyword to find the most relevant attributes with descriptions
 
 ### ODD Customisation
 
@@ -162,7 +162,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QURY-01 | Phase 6 | Complete |
 | QURY-02 | Phase 6 | Complete |
 | QURY-03 | Phase 6 | Complete |
-| QURY-04 | Phase 6 | Pending |
+| QURY-04 | Phase 6 | Complete |
 | ODDS-01 | Phase 8 | Pending |
 | ODDS-02 | Phase 8 | Pending |
 | ODDS-03 | Phase 8 | Pending |
