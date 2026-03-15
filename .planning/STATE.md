@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Document Validation & Enhanced Querying
 status: completed
-stopped_at: Phase 8 context gathered
-last_updated: "2026-03-15T15:54:08.659Z"
-last_activity: 2026-03-15 -- Completed 07-03 element validation and MCP tools
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-15T16:01:00Z"
+last_activity: 2026-03-15 -- Completed 08-02 ODD server integration
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting -- so it produces correct TEI markup without hallucinating the spec.
-**Current focus:** Phase 8 - ODD Customisation (In Progress)
+**Current focus:** Phase 8 - ODD Customisation (Complete)
 
 ## Current Position
 
 Phase: 8 of 8 (ODD Customisation)
-Plan: 1 of 2 complete
-Status: In Progress
-Last activity: 2026-03-15 -- Completed 08-01 ODD customisation core logic
+Plan: 2 of 2 complete
+Status: Complete
+Last activity: 2026-03-15 -- Completed 08-02 ODD server integration
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [█████████░] 94%
 | Phase 07 P02 | 4min | 2 tasks | 2 files |
 | Phase 07 P03 | 3min | 2 tasks | 4 files |
 | Phase 08 P01 | 2min | 2 tasks | 5 files |
+| Phase 08 P02 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,7 @@ Recent decisions affecting current work:
 - [Phase 07]: XML vs structured input auto-detected by leading '<' character in validate_element
 - [Phase 07]: MCP tool layer handles JSON string to dict conversion for validate_element structured input
 - [08-01]: Deep copy + filter pattern for constrained OddStore; only elements dict filtered; attDef merge via dataclasses.replace
+- [08-02]: ValueError from _get_store/_get_validator caught per-tool as error dict; use_odd=False default preserves backward compat
 
 ### Pending Todos
 
@@ -92,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T15:52:50Z
-Stopped at: Completed 08-01-PLAN.md
-Resume file: .planning/phases/08-odd-customisation/08-01-SUMMARY.md
+Last session: 2026-03-15T16:01:00Z
+Stopped at: Completed 08-02-PLAN.md
+Resume file: .planning/phases/08-odd-customisation/08-02-SUMMARY.md

@@ -85,7 +85,7 @@ Requirements for document validation and enhanced querying milestone.
 
 ### ODD Customisation
 
-- [ ] **ODDS-01**: User can load a project ODD customisation file to constrain validation to project-specific schema
+- [x] **ODDS-01**: User can load a project ODD customisation file to constrain validation to project-specific schema
 - [x] **ODDS-02**: ODD parser handles moduleRef with include/except for element filtering
 - [x] **ODDS-03**: ODD parser handles elementSpec mode="delete" to remove elements from the schema
 - [x] **ODDS-04**: ODD parser handles elementSpec mode="change" for attribute modifications
@@ -163,7 +163,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QURY-02 | Phase 6 | Complete |
 | QURY-03 | Phase 6 | Complete |
 | QURY-04 | Phase 6 | Complete |
-| ODDS-01 | Phase 8 | Pending |
+| ODDS-01 | Phase 8 | Complete |
 | ODDS-02 | Phase 8 | Complete |
 | ODDS-03 | Phase 8 | Complete |
 | ODDS-04 | Phase 8 | Complete |
