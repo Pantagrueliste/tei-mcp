@@ -45,7 +45,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- Model fields and parser deprecation extraction (TDD)
+- [x] 05-01-PLAN.md -- Model fields and parser deprecation extraction (TDD)
 - [ ] 05-02-PLAN.md -- Deprecation in store and server tool responses (TDD)
 
 ### Phase 6: Enhanced Querying
@@ -105,7 +105,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8
 | 2. Basic Lookups and Search | v1.0 | 2/2 | Complete | 2026-03-14 |
 | 3. Attribute Resolution and Class Hierarchy | v1.0 | 2/2 | Complete | 2026-03-14 |
 | 4. Content Models and Nesting Validation | v1.0 | 2/2 | Complete | 2026-03-15 |
-| 5. Deprecation Awareness | v2.0 | 0/2 | Not started | - |
+| 5. Deprecation Awareness | v2.0 | 1/2 | In progress | - |
 | 6. Enhanced Querying | v2.0 | 0/? | Not started | - |
 | 7. Core Validation | v2.0 | 0/? | Not started | - |
 | 8. ODD Customisation | v2.0 | 0/? | Not started | - |

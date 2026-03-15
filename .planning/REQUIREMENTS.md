@@ -3,9 +3,7 @@
 **Defined:** 2026-03-14
 **Core Value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting — so it produces correct TEI markup without hallucinating the spec.
 
-## v1 Requirements
-
-Requirements for initial release. Each maps to roadmap phases.
+## v1 Requirements (Complete)
 
 ### Bootstrap
 
@@ -46,7 +44,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Class Hierarchy
 
-- [x] **HIER-01**: User can see the full class membership chain for an element (e.g., persName → model.nameLike.agent → model.nameLike → model.phraseSeq)
+- [x] **HIER-01**: User can see the full class membership chain for an element
 
 ### Cross-Cutting
 
@@ -56,7 +54,46 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ## v2 Requirements
 
-Deferred to future release. Tracked but not in current roadmap.
+Requirements for document validation and enhanced querying milestone.
+
+### Validation
+
+- [ ] **VALD-01**: User can call validate_document with a TEI XML file path and receive a JSON array of issues with severity, line number, element, message, and rule
+- [ ] **VALD-02**: validate_document checks content model compliance — flags children not allowed by the parent's expanded content model
+- [ ] **VALD-03**: validate_document checks required children — flags elements violating minimum cardinality (e.g., choice needs ≥2 children)
+- [ ] **VALD-04**: validate_document checks attribute validity — flags attributes not in the element's attribute list (including inherited)
+- [ ] **VALD-05**: validate_document checks closed value lists — flags attribute values not in allowed sets
+- [ ] **VALD-06**: validate_document checks empty elements — flags elements with required content models that have no children
+- [ ] **VALD-07**: validate_document checks reference integrity — flags bare ref="#" placeholders and optionally validates ref targets against authority file xml:id values
+- [ ] **VALD-08**: validate_document checks missing attributes — flags elements where key attributes are absent (e.g., locus without from/to, date without when, persName without ref in body)
+- [ ] **VALD-09**: validate_document response clearly states scope limitations (not checked: Schematron, datatype patterns, element ordering)
+- [ ] **VALD-10**: User can call validate_element with element context to check a single element for incremental editing workflows
+
+### Deprecation
+
+- [ ] **DEPR-01**: list_attributes flags deprecated attributes with a "deprecated" field, validUntil date, and migration guidance
+- [ ] **DEPR-02**: lookup_element surfaces deprecation status for deprecated elements
+- [ ] **DEPR-03**: validate_document emits warnings for deprecated attribute and element usage
+- [x] **DEPR-04**: Parser extracts @validUntil and desc type="deprecationInfo" from ODD spec into model fields
+
+### Enhanced Querying
+
+- [ ] **QURY-01**: User can call valid_children with a parent element name and receive a flat, deduplicated list of allowed child element names
+- [ ] **QURY-02**: valid_children groups results by provenance (directly named vs via class membership) and flags required vs optional
+- [ ] **QURY-03**: User can call check_nesting with multiple parent-child pairs in a single batch call and receive results for all pairs
+- [ ] **QURY-04**: User can call suggest_attribute with an element name and intent keyword to find the most relevant attributes with descriptions
+
+### ODD Customisation
+
+- [ ] **ODDS-01**: User can load a project ODD customisation file to constrain validation to project-specific schema
+- [ ] **ODDS-02**: ODD parser handles moduleRef with include/except for element filtering
+- [ ] **ODDS-03**: ODD parser handles elementSpec mode="delete" to remove elements from the schema
+- [ ] **ODDS-04**: ODD parser handles elementSpec mode="change" for attribute modifications
+- [ ] **ODDS-05**: ODD-customised validation produces a separate OddStore instance (base store unchanged)
+
+## Future Requirements
+
+Deferred beyond v2. Tracked but not in current roadmap.
 
 ### Extended Reference
 
@@ -74,11 +111,10 @@ Deferred to future release. Tracked but not in current roadmap.
 |---------|--------|
 | Guidelines prose/remarks | Structure only — keeps payloads small for encoding assistance |
 | Schema generation (RELAX NG / XSD) | Different tool (Roma/OxGarage), different complexity |
-| Document validation | Requires full schema + validation engine — use oXygen/jing |
-| Module subsetting / filtering | Full spec always loaded — simplifies implementation |
+| Full schema validation (Schematron, datatypes, ordering) | Content model presence checks only — not a schema validator replacement |
 | HTTP/SSE transport | stdio only per project constraints |
 | Write operations / spec modification | Read-only reference tool |
-| Caching/persistence | Parse fresh each startup — p5subset.xml is small enough |
+| ODD change mode deep-merge of content models | MVP covers attribute changes only; content model merge deferred |
 
 ## Traceability
 
@@ -109,12 +145,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 | XCUT-01 | Phase 1 | Complete |
 | XCUT-02 | Phase 1 | Complete |
 | XCUT-03 | Phase 1 | Complete |
+| VALD-01 | Phase 7 | Pending |
+| VALD-02 | Phase 7 | Pending |
+| VALD-03 | Phase 7 | Pending |
+| VALD-04 | Phase 7 | Pending |
+| VALD-05 | Phase 7 | Pending |
+| VALD-06 | Phase 7 | Pending |
+| VALD-07 | Phase 7 | Pending |
+| VALD-08 | Phase 7 | Pending |
+| VALD-09 | Phase 7 | Pending |
+| VALD-10 | Phase 7 | Pending |
+| DEPR-01 | Phase 5 | Pending |
+| DEPR-02 | Phase 5 | Pending |
+| DEPR-03 | Phase 7 | Pending |
+| DEPR-04 | Phase 5 | Complete |
+| QURY-01 | Phase 6 | Pending |
+| QURY-02 | Phase 6 | Pending |
+| QURY-03 | Phase 6 | Pending |
+| QURY-04 | Phase 6 | Pending |
+| ODDS-01 | Phase 8 | Pending |
+| ODDS-02 | Phase 8 | Pending |
+| ODDS-03 | Phase 8 | Pending |
+| ODDS-04 | Phase 8 | Pending |
+| ODDS-05 | Phase 8 | Pending |
 
 **Coverage:**
-- v1 requirements: 23 total
-- Mapped to phases: 23
+- v1 requirements: 23 total (all complete)
+- v2 requirements: 23 total
+- Mapped to phases: 23 v1 (complete) + 23 v2 (pending) = 46 total
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-14*
-*Last updated: 2026-03-14 after roadmap creation*
+*Last updated: 2026-03-15 after v2.0 roadmap creation*
