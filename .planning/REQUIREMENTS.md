@@ -67,7 +67,7 @@ Requirements for document validation and enhanced querying milestone.
 - [x] **VALD-07**: validate_document checks reference integrity — flags bare ref="#" placeholders and optionally validates ref targets against authority file xml:id values
 - [ ] **VALD-08**: validate_document checks missing attributes — flags elements where key attributes are absent (e.g., locus without from/to, date without when, persName without ref in body)
 - [x] **VALD-09**: validate_document response clearly states scope limitations (not checked: Schematron, datatype patterns, element ordering)
-- [ ] **VALD-10**: User can call validate_element with element context to check a single element for incremental editing workflows
+- [x] **VALD-10**: User can call validate_element with element context to check a single element for incremental editing workflows
 
 ### Deprecation
 
@@ -154,7 +154,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VALD-07 | Phase 7 | Complete |
 | VALD-08 | Phase 7 | Pending |
 | VALD-09 | Phase 7 | Complete |
-| VALD-10 | Phase 7 | Pending |
+| VALD-10 | Phase 7 | Complete |
 | DEPR-01 | Phase 5 | Complete |
 | DEPR-02 | Phase 5 | Complete |
 | DEPR-03 | Phase 7 | Complete |
