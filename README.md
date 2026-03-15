@@ -1,6 +1,6 @@
 # tei-mcp
 
-An [MCP](https://modelcontextprotocol.io) server that gives LLMs access to the [TEI P5](https://tei-c.org/guidelines/) specification. It parses the TEI ODD and exposes tools for element lookup, attribute resolution, content model expansion, nesting validation, document validation, and ODD customisation.
+An [MCP](https://modelcontextprotocol.io) server that helps AI agents read and write valid [TEI](https://tei-c.org/guidelines/) XML. It parses the TEI P5 specification and exposes 16 tools for element lookup, attribute resolution, content model expansion, nesting validation, document validation, and ODD customisation.
 
 ## Features
 
@@ -22,8 +22,21 @@ An [MCP](https://modelcontextprotocol.io) server that gives LLMs access to the [
 
 ## Installation
 
+The quickest way is via [uvx](https://docs.astral.sh/uv/), which fetches and runs the server automatically:
+
 ```bash
-# Clone and install
+uvx tei-mcp
+```
+
+Or install from PyPI:
+
+```bash
+pip install tei-mcp
+```
+
+Or clone and install from source:
+
+```bash
 git clone https://github.com/Pantagrueliste/tei-mcp.git
 cd tei-mcp
 uv sync
@@ -33,40 +46,33 @@ On first run, the server downloads `p5subset.xml` from the TEI website (~5 MB) a
 
 ## Usage
 
-### With Claude Desktop
-
-Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+tei-mcp works with any MCP-compatible client. Add the following to your client's MCP server configuration:
 
 ```json
 {
   "mcpServers": {
     "tei": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/tei-mcp", "tei-mcp"]
+      "command": "uvx",
+      "args": ["tei-mcp"]
     }
   }
 }
 ```
 
-### With Claude Code
+Where this file lives depends on your client:
 
-Add to your project settings (`.mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "tei": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/tei-mcp", "tei-mcp"]
-    }
-  }
-}
-```
+| Client | Configuration file |
+|--------|-------------------|
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) |
+| Claude Code | `.mcp.json` in your project directory |
+| Cursor | `.cursor/mcp.json` in your project directory |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| Other clients | Consult your client's MCP documentation |
 
 ### Standalone
 
 ```bash
-uv run tei-mcp
+uvx tei-mcp
 ```
 
 The server communicates over stdio using the MCP protocol.
