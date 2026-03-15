@@ -315,6 +315,50 @@
     </attList>
   </classSpec>
 
+  <!-- Deprecated Element Specs -->
+  <elementSpec ident="re" module="dictionaries" validUntil="2024-01-15">
+    <gloss xml:lang="en">related entry</gloss>
+    <desc xml:lang="en">contains a dictionary entry for a lexical item related to the headword.</desc>
+    <desc xml:lang="en" type="deprecationInfo">Because an <gi>entry</gi> can now occur inside an <gi>entry</gi>, the <gi>re</gi> element is no longer needed.</desc>
+    <classes>
+      <memberOf key="model.common"/>
+    </classes>
+    <content/>
+  </elementSpec>
+
+  <elementSpec ident="superEntry" module="dictionaries" validUntil="2027-03-07">
+    <gloss xml:lang="en">super entry</gloss>
+    <desc xml:lang="en">groups a sequence of entries within any kind of lexical resource.</desc>
+    <classes>
+      <memberOf key="model.common"/>
+    </classes>
+    <content/>
+  </elementSpec>
+
+  <!-- Class with deprecated attDef -->
+  <classSpec ident="att.ref" module="tei" type="atts">
+    <gloss xml:lang="en">reference attributes</gloss>
+    <desc xml:lang="en">provides attributes for referencing.</desc>
+    <classes/>
+    <attList>
+      <attDef ident="name" usage="opt" validUntil="2026-11-13">
+        <desc xml:lang="en">specifies a name for the referent.</desc>
+        <desc xml:lang="en" type="deprecationInfo">Use the <att>ident</att> attribute instead.</desc>
+        <datatype><dataRef key="teidata.text"/></datatype>
+      </attDef>
+    </attList>
+  </classSpec>
+
+  <elementSpec ident="attRef" module="tagdocs">
+    <gloss xml:lang="en">attribute reference</gloss>
+    <desc xml:lang="en">references an attribute.</desc>
+    <classes>
+      <memberOf key="att.ref"/>
+      <memberOf key="att.global"/>
+    </classes>
+    <content/>
+  </elementSpec>
+
   <!-- Macro Spec -->
   <macroSpec ident="macro.paraContent" module="core">
     <gloss xml:lang="en">paragraph content</gloss>

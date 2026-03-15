@@ -21,8 +21,8 @@ def test_parse_odd_entity_counts(test_odd_path: Path):
     from tei_mcp.parser import parse_odd
 
     store = parse_odd(test_odd_path)
-    assert store.element_count == 12
-    assert store.class_count == 13
+    assert store.element_count == 15
+    assert store.class_count == 14
     assert store.macro_count == 1
     assert store.module_count == 4
 
@@ -234,3 +234,63 @@ def test_element_content_raw_nonempty(test_odd_path: Path):
     assert "<" in p.content_raw
     # Should contain the content element serialized as XML
     assert "macroRef" in p.content_raw or "content" in p.content_raw
+
+
+# --- Deprecation field tests ---
+
+
+def test_deprecated_element_fields(test_odd_path: Path):
+    """Deprecated element 're' has valid_until and deprecation_info with inline XML."""
+    from tei_mcp.parser import parse_odd
+
+    store = parse_odd(test_odd_path)
+    re_el = store.get_element("re")
+    assert re_el is not None
+    assert re_el.valid_until == "2024-01-15"
+    assert "<gi>entry</gi>" in re_el.deprecation_info
+
+
+def test_deprecated_element_fallback_info(test_odd_path: Path):
+    """Deprecated element without deprecationInfo desc gets generic fallback."""
+    from tei_mcp.parser import parse_odd
+
+    store = parse_odd(test_odd_path)
+    se = store.get_element("superEntry")
+    assert se is not None
+    assert se.valid_until == "2027-03-07"
+    assert se.deprecation_info == "Deprecated as of 2027-03-07. No migration guidance available."
+
+
+def test_deprecated_attdef_fields(test_odd_path: Path):
+    """Deprecated attDef on classSpec has valid_until and deprecation_info."""
+    from tei_mcp.parser import parse_odd
+
+    store = parse_odd(test_odd_path)
+    cls = store.get_class("att.ref")
+    assert cls is not None
+    name_att = next(a for a in cls.attributes if a.ident == "name")
+    assert name_att.valid_until == "2026-11-13"
+    assert "ident" in name_att.deprecation_info
+
+
+def test_nondeprecated_element_no_validuntil(test_odd_path: Path):
+    """Non-deprecated element has empty valid_until and deprecation_info."""
+    from tei_mcp.parser import parse_odd
+
+    store = parse_odd(test_odd_path)
+    p = store.get_element("p")
+    assert p is not None
+    assert p.valid_until == ""
+    assert p.deprecation_info == ""
+
+
+def test_nondeprecated_attdef_no_validuntil(test_odd_path: Path):
+    """Non-deprecated attDef has empty valid_until and deprecation_info."""
+    from tei_mcp.parser import parse_odd
+
+    store = parse_odd(test_odd_path)
+    p = store.get_element("p")
+    assert p is not None
+    part_att = next(a for a in p.attributes if a.ident == "part")
+    assert part_att.valid_until == ""
+    assert part_att.deprecation_info == ""
