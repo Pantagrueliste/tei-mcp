@@ -161,7 +161,7 @@ async def test_check_nesting_batch_tool(ctx):
     from tei_mcp.server import check_nesting_batch
 
     pairs = [{"child": "p", "parent": "div"}, {"child": "head", "parent": "div"}]
-    result = await check_nesting_batch(pairs, False, ctx)
+    result = await check_nesting_batch(pairs, recursive=False, ctx=ctx)
     assert result["count"] == 2
     assert result["results"][0]["valid"] is True
     assert result["results"][1]["valid"] is True
