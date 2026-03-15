@@ -476,3 +476,102 @@ def test_non_deprecated_no_warning(parsed_store, tmp_path):
     result = v.validate_file(str(path))
     dep_issues = [i for i in result["issues"] if i["rule"] == "deprecation"]
     assert len(dep_issues) == 0
+
+
+# ---- Task 1 (Plan 03): validate_element dual input format ----
+
+
+def test_validate_element_xml_snippet(parsed_store):
+    """validate_element('<hi rend="bold">text</hi>', parent="p") returns no errors (hi valid child of p)."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_element('<hi>text</hi>', parent="p")
+    assert isinstance(result, dict)
+    assert "issues" in result
+    content_errors = [i for i in result["issues"] if i["rule"] == "content-model"]
+    assert len(content_errors) == 0
+
+
+def test_validate_element_structured(parsed_store):
+    """validate_element with dict input works same as XML snippet."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_element(
+        {"name": "hi", "attributes": {}, "children": []}, parent="p"
+    )
+    assert isinstance(result, dict)
+    assert "issues" in result
+    content_errors = [i for i in result["issues"] if i["rule"] == "content-model"]
+    assert len(content_errors) == 0
+
+
+def test_validate_element_invalid_nesting(parsed_store):
+    """validate_element('<fileDesc/>', parent='p') returns content-model error."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_element("<fileDesc/>", parent="p")
+    content_errors = [i for i in result["issues"] if i["rule"] == "content-model"]
+    assert len(content_errors) >= 1
+    assert any("fileDesc" in i["message"] for i in content_errors)
+
+
+def test_validate_element_invalid_attr(parsed_store):
+    """validate_element('<p foobar="x">text</p>', parent='body') flags unknown-attribute."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_element('<p foobar="x">text</p>', parent="body")
+    attr_errors = [i for i in result["issues"] if i["rule"] == "unknown-attribute"]
+    assert len(attr_errors) >= 1
+    assert any("foobar" in i["message"] for i in attr_errors)
+
+
+def test_validate_element_no_line_numbers(parsed_store):
+    """All issues from validate_element have line=None."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    # Use a case that produces issues
+    result = v.validate_element('<p foobar="x">text</p>', parent="body")
+    for issue in result["issues"]:
+        assert issue["line"] is None, f"Expected line=None, got {issue['line']} for {issue}"
+
+
+def test_validate_element_summary_and_limitations(parsed_store):
+    """Response has summary and limitations fields."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_element("<p>text</p>", parent="body")
+    assert "summary" in result
+    assert "limitations" in result
+    assert isinstance(result["summary"], dict)
+    assert "total" in result["summary"]
+
+
+def test_validate_element_auto_detects_xml(parsed_store):
+    """String starting with '<' is parsed as XML; dict is treated as structured input."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    # XML string
+    r1 = v.validate_element("<p>text</p>", parent="body")
+    assert isinstance(r1, dict)
+    # Dict input
+    r2 = v.validate_element({"name": "p", "attributes": {}, "children": []}, parent="body")
+    assert isinstance(r2, dict)
+
+
+def test_validate_element_deprecation(parsed_store):
+    """Deprecated element via validate_element produces deprecation warning."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    # 're' is deprecated (validUntil=2024-01-15)
+    result = v.validate_element("<re/>", parent="body")
+    dep_issues = [i for i in result["issues"] if i["rule"] == "deprecation"]
+    assert len(dep_issues) >= 1
+    assert any(i["element"] == "re" for i in dep_issues)
