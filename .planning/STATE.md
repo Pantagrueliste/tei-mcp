@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Document Validation & Enhanced Querying
-status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-03-15T13:56:12.125Z"
-last_activity: 2026-03-15 -- Completed 06-03 suggest_attribute tool
+status: in-progress
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-15T14:59:17Z"
+last_activity: 2026-03-15 -- Completed 07-01 validator scaffold
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_plans: 8
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** An LLM can accurately look up any TEI element's attributes, content model, and valid nesting -- so it produces correct TEI markup without hallucinating the spec.
-**Current focus:** Phase 6 - Enhanced Querying
+**Current focus:** Phase 7 - Core Validation
 
 ## Current Position
 
-Phase: 6 of 8 (Enhanced Querying)
-Plan: 3 of 3 complete
-Status: Phase Complete
-Last activity: 2026-03-15 -- Completed 06-03 suggest_attribute tool
+Phase: 7 of 8 (Core Validation)
+Plan: 1 of 3 complete
+Status: In Progress
+Last activity: 2026-03-15 -- Completed 07-01 validator scaffold
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [██████████] 100%
 | Phase 06 P01 | 2min | 2 tasks | 6 files |
 | Phase 06 P02 | 1min | 2 tasks | 4 files |
 | Phase 06 P03 | 1min | 2 tasks | 4 files |
+| Phase 07 P01 | 2min | 1 task | 3 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,7 @@ Recent decisions affecting current work:
 - [06-01]: context_min=0 in alternation makes children optional; anyElement returns flag instead of listing all elements; children sorted alphabetically
 - [06-02]: check_nesting_batch reuses existing check_nesting per pair; per-pair error isolation in batch operations
 - [Phase 06]: _get_attr_description helper looks up desc from element or class; keyword overlap scoring with locality tie-breaking
+- [07-01]: TEIValidator as separate module consuming OddStore; lxml for user docs only; LIMITATIONS constant in every response
 
 ### Pending Todos
 
@@ -83,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T13:56:12.122Z
-Stopped at: Completed 06-03-PLAN.md
-Resume file: .planning/phases/06-enhanced-querying/06-03-SUMMARY.md
+Last session: 2026-03-15T14:59:17Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: .planning/phases/07-core-validation/07-01-SUMMARY.md

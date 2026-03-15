@@ -66,19 +66,20 @@ Plans:
 ### Phase 7: Core Validation
 **Goal**: An LLM can validate a complete TEI XML document or a single element in context, receiving structured issues with severity, location, and actionable messages
 **Depends on**: Phase 6 (caching infrastructure from valid_children; deprecation data from Phase 5)
-**Requirements**: VALD-01, VALD-02, VALD-03, VALD-04, VALD-05, VALD-06, VALD-07, VALD-08, VALD-09, VALD-10, DEPR-03
+**Requirements**: VALD-01, VALD-02, VALD-03, VALD-04, VALD-05, VALD-06, VALD-07, VALD-09, VALD-10, DEPR-03
+**Note**: VALD-08 dropped (editorial convention, not spec rule) -- project-specific attribute expectations belong in ODD customisation (Phase 8)
 **Success Criteria** (what must be TRUE):
   1. User calls validate_document with a TEI XML file path and receives a JSON array of issues, each with severity (error/warning/info), line number, element name, message, and rule code
-  2. validate_document catches content model violations (child not allowed), attribute violations (unknown attribute, invalid closed-list value), empty required-content elements, missing key attributes, and reference integrity issues (bare ref="#" placeholders)
+  2. validate_document catches content model violations (child not allowed), attribute violations (unknown attribute, invalid closed-list value), empty required-content elements, and reference integrity issues (bare ref="#" placeholders)
   3. validate_document emits warnings for deprecated element and attribute usage (e.g., seg/@part triggers a deprecation warning with migration guidance)
   4. validate_document response includes a limitations field stating what was NOT checked (Schematron, datatype patterns, element ordering)
   5. User calls validate_element with an element name and its context (parent, attributes, children) and receives validation issues for that single element -- enabling incremental editing workflows
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [x] 07-01-PLAN.md -- TEIValidator scaffold, lxml dependency, validate_file response shape (TDD)
+- [ ] 07-02-PLAN.md -- All validation check methods: content model, attributes, empty, refs, deprecation (TDD)
+- [ ] 07-03-PLAN.md -- validate_element dual-format input and MCP tool registration (TDD)
 
 ### Phase 8: ODD Customisation
 **Goal**: An LLM can validate documents against a project-specific ODD customisation rather than the full permissive TEI schema
@@ -106,7 +107,7 @@ Phases execute in numeric order: 5 -> 6 -> 7 -> 8
 | 2. Basic Lookups and Search | v1.0 | 2/2 | Complete | 2026-03-14 |
 | 3. Attribute Resolution and Class Hierarchy | v1.0 | 2/2 | Complete | 2026-03-14 |
 | 4. Content Models and Nesting Validation | v1.0 | 2/2 | Complete | 2026-03-15 |
-| 5. Deprecation Awareness | v2.0 | 1/2 | In progress | - |
-| 6. Enhanced Querying | 2/3 | In Progress|  | - |
-| 7. Core Validation | v2.0 | 0/? | Not started | - |
+| 5. Deprecation Awareness | v2.0 | 2/2 | Complete | 2026-03-15 |
+| 6. Enhanced Querying | v2.0 | 3/3 | Complete | 2026-03-15 |
+| 7. Core Validation | v2.0 | 1/3 | In Progress | - |
 | 8. ODD Customisation | v2.0 | 0/? | Not started | - |
