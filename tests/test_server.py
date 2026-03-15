@@ -60,7 +60,7 @@ async def test_lifespan_loads_store(test_odd_path: Path):
     ):
         async with app_lifespan(mcp._mcp_server) as context:
             store = context["store"]
-            assert store.element_count == 15
+            assert store.element_count == 16
             assert store.class_count == 14
             assert store.macro_count == 1
             assert store.module_count == 4
@@ -134,3 +134,19 @@ async def test_lookup_class_deprecated_attr(ctx):
     name_attr = next(a for a in attrs if a["ident"] == "name")
     assert "deprecation" in name_attr
     assert name_attr["deprecation"]["valid_until"] == "2026-11-13"
+
+
+# --- valid_children tool tests ---
+
+
+@pytest.mark.asyncio
+async def test_valid_children_tool(ctx):
+    """MCP tool valid_children delegates to store and returns result."""
+    from tei_mcp.server import valid_children
+
+    result = await valid_children("persName", ctx)
+    assert "error" not in result
+    assert result["element"] == "persName"
+    assert result["allows_text"] is True
+    child_names = [c["name"] for c in result["children"]]
+    assert "surname" in child_names

@@ -359,6 +359,20 @@
     <content/>
   </elementSpec>
 
+  <elementSpec ident="egXML" module="tagdocs">
+    <gloss xml:lang="en">example XML</gloss>
+    <desc xml:lang="en">contains a single well-formed XML example demonstrating the use of some element or attribute.</desc>
+    <classes>
+      <memberOf key="att.global"/>
+    </classes>
+    <content>
+      <alternate minOccurs="0" maxOccurs="unbounded">
+        <textNode/>
+        <anyElement/>
+      </alternate>
+    </content>
+  </elementSpec>
+
   <!-- Macro Spec -->
   <macroSpec ident="macro.paraContent" module="core">
     <gloss xml:lang="en">paragraph content</gloss>

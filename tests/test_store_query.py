@@ -65,7 +65,7 @@ def test_get_class_members(parsed_store):
     assert "p" in members
     assert "persName" in members
     assert "div" in members
-    assert len(members) == 13  # all elements with att.global
+    assert len(members) == 14  # all elements with att.global
 
 
 def test_get_class_members_with_subclass(parsed_store):
@@ -546,3 +546,94 @@ def test_resolve_attributes_no_deprecation(parsed_store):
     attrs = result["attributes"]
     part_attr = next(a for a in attrs if a["name"] == "part")
     assert "deprecation" not in part_attr
+
+
+# --- valid_children tests ---
+
+
+def test_valid_children_basic(parsed_store):
+    """valid_children('persName') returns flat list with surname, forename, roleName; allows_text=True."""
+    result = parsed_store.valid_children("persName")
+    assert "error" not in result
+    assert result["element"] == "persName"
+    assert result["allows_text"] is True
+    assert result["allows_any_element"] is False
+    assert result["empty"] is False
+    child_names = [c["name"] for c in result["children"]]
+    assert "surname" in child_names
+    assert "forename" in child_names
+    assert "roleName" in child_names
+    # Each child has a required flag
+    for child in result["children"]:
+        assert "name" in child
+        assert "required" in child
+
+
+def test_valid_children_deduplication(parsed_store):
+    """valid_children('div') returns each element name exactly once."""
+    result = parsed_store.valid_children("div")
+    assert "error" not in result
+    child_names = [c["name"] for c in result["children"]]
+    assert len(child_names) == len(set(child_names))
+
+
+def test_valid_children_required_flag(parsed_store):
+    """valid_children('body') has children from model.common with required=True."""
+    result = parsed_store.valid_children("body")
+    assert "error" not in result
+    # body has <classRef key="model.common" minOccurs=1> in a sequence -- required
+    children = result["children"]
+    assert len(children) > 0
+    # At least some children should be required (from model.common with minOccurs=1)
+    required_children = [c for c in children if c["required"]]
+    assert len(required_children) > 0
+
+
+def test_valid_children_alternation_not_required(parsed_store):
+    """valid_children('div') has children inside an alternation -- all required=False."""
+    result = parsed_store.valid_children("div")
+    assert "error" not in result
+    children = result["children"]
+    # All children in div are inside alternation nodes, so none should be required
+    for child in children:
+        assert child["required"] is False, f"{child['name']} should not be required (alternation context)"
+
+
+def test_valid_children_allows_text(parsed_store):
+    """valid_children('head') has allows_text=True."""
+    result = parsed_store.valid_children("head")
+    assert "error" not in result
+    assert result["allows_text"] is True
+
+
+def test_valid_children_empty(parsed_store):
+    """valid_children('gap') returns children=[], allows_text=False, empty=True."""
+    result = parsed_store.valid_children("gap")
+    assert "error" not in result
+    assert result["children"] == []
+    assert result["allows_text"] is False
+    assert result["allows_any_element"] is False
+    assert result["empty"] is True
+
+
+def test_valid_children_any_element(parsed_store):
+    """valid_children('egXML') returns allows_any_element=True, children=[]."""
+    result = parsed_store.valid_children("egXML")
+    assert "error" not in result
+    assert result["allows_any_element"] is True
+    assert result["children"] == []
+    assert result["allows_text"] is True
+
+
+def test_valid_children_not_found(parsed_store):
+    """valid_children('notreal') returns error dict with suggestions."""
+    result = parsed_store.valid_children("notreal")
+    assert "error" in result
+    assert "suggestions" in result
+
+
+def test_valid_children_sorted(parsed_store):
+    """valid_children returns children sorted alphabetically by name."""
+    result = parsed_store.valid_children("persName")
+    child_names = [c["name"] for c in result["children"]]
+    assert child_names == sorted(child_names)
