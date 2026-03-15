@@ -150,3 +150,18 @@ async def test_valid_children_tool(ctx):
     assert result["allows_text"] is True
     child_names = [c["name"] for c in result["children"]]
     assert "surname" in child_names
+
+
+# --- check_nesting_batch tool tests ---
+
+
+@pytest.mark.asyncio
+async def test_check_nesting_batch_tool(ctx):
+    """MCP tool check_nesting_batch delegates to store and returns batch results."""
+    from tei_mcp.server import check_nesting_batch
+
+    pairs = [{"child": "p", "parent": "div"}, {"child": "head", "parent": "div"}]
+    result = await check_nesting_batch(pairs, False, ctx)
+    assert result["count"] == 2
+    assert result["results"][0]["valid"] is True
+    assert result["results"][1]["valid"] is True

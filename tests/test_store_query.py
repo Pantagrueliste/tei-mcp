@@ -637,3 +637,58 @@ def test_valid_children_sorted(parsed_store):
     result = parsed_store.valid_children("persName")
     child_names = [c["name"] for c in result["children"]]
     assert child_names == sorted(child_names)
+
+
+# --- check_nesting_batch tests ---
+
+
+def test_check_nesting_batch_multiple(parsed_store):
+    """Batch with two valid pairs returns results list with 2 entries, both valid=True."""
+    pairs = [{"child": "p", "parent": "div"}, {"child": "head", "parent": "div"}]
+    result = parsed_store.check_nesting_batch(pairs)
+    assert result["count"] == 2
+    assert len(result["results"]) == 2
+    assert result["results"][0]["valid"] is True
+    assert result["results"][1]["valid"] is True
+
+
+def test_check_nesting_batch_mixed_results(parsed_store):
+    """Batch with valid and invalid pairs returns correct valid/invalid per pair."""
+    pairs = [{"child": "p", "parent": "div"}, {"child": "div", "parent": "p"}]
+    result = parsed_store.check_nesting_batch(pairs)
+    assert result["count"] == 2
+    assert result["results"][0]["valid"] is True
+    assert result["results"][1]["valid"] is False
+
+
+def test_check_nesting_batch_error_isolation(parsed_store):
+    """Batch with typo in one pair: first pair succeeds, second pair has error with suggestions."""
+    pairs = [{"child": "p", "parent": "div"}, {"child": "perName", "parent": "div"}]
+    result = parsed_store.check_nesting_batch(pairs)
+    assert result["count"] == 2
+    assert result["results"][0]["valid"] is True
+    assert "error" in result["results"][1]
+    assert "persName" in result["results"][1]["suggestions"]
+
+
+def test_check_nesting_batch_recursive(parsed_store):
+    """Batch with recursive=True returns results with 'reachable' key."""
+    pairs = [{"child": "persName", "parent": "body"}]
+    result = parsed_store.check_nesting_batch(pairs, recursive=True)
+    assert result["count"] == 1
+    assert result["results"][0]["reachable"] is True
+
+
+def test_check_nesting_batch_empty(parsed_store):
+    """Batch with empty pairs list returns count=0 and empty results."""
+    result = parsed_store.check_nesting_batch([])
+    assert result == {"results": [], "count": 0}
+
+
+def test_check_nesting_batch_malformed_pair(parsed_store):
+    """Pair missing 'child' or 'parent' key returns descriptive error for that pair."""
+    pairs = [{"child": "p"}, {"parent": "div"}, "not-a-dict"]
+    result = parsed_store.check_nesting_batch(pairs)
+    assert result["count"] == 3
+    for r in result["results"]:
+        assert "error" in r
