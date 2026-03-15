@@ -9,7 +9,9 @@ class FakeContext:
     """Minimal stand-in for fastmcp.Context providing lifespan_context."""
 
     def __init__(self, store):
-        self.lifespan_context = {"store": store}
+        from tei_mcp.validator import TEIValidator
+
+        self.lifespan_context = {"store": store, "validator": TEIValidator(store)}
 
 
 @pytest.fixture
@@ -31,6 +33,8 @@ from tei_mcp.server import (  # noqa: E402
     lookup_element,
     lookup_macro,
     search,
+    validate_document,
+    validate_element,
 )
 
 
@@ -339,3 +343,56 @@ async def test_check_nesting_tool_not_found(ctx):
     assert isinstance(result, dict)
     assert "error" in result
     assert "suggestions" in result
+
+
+# ---------------------------------------------------------------------------
+# validate_document
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_validate_document_tool(ctx, tmp_path):
+    """validate_document returns issues/summary/limitations for a TEI file."""
+    tei_xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        "<text><body><p>Hello</p></body></text>"
+        "</TEI>"
+    )
+    p = tmp_path / "test.xml"
+    p.write_text(tei_xml, encoding="utf-8")
+
+    result = await validate_document(str(p), ctx=ctx)
+    assert isinstance(result, dict)
+    assert "issues" in result
+    assert "summary" in result
+    assert "limitations" in result
+    assert isinstance(result["issues"], list)
+
+
+# ---------------------------------------------------------------------------
+# validate_element
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_validate_element_tool_xml(ctx):
+    """validate_element with XML snippet returns issues/summary/limitations."""
+    result = await validate_element("<hi>text</hi>", "p", ctx=ctx)
+    assert isinstance(result, dict)
+    assert "issues" in result
+    assert "summary" in result
+    assert "limitations" in result
+
+
+@pytest.mark.asyncio
+async def test_validate_element_tool_json(ctx):
+    """validate_element with JSON string parses structured input."""
+    import json
+
+    element_json = json.dumps({"name": "hi", "attributes": {}, "children": []})
+    result = await validate_element(element_json, "p", ctx=ctx)
+    assert isinstance(result, dict)
+    assert "issues" in result

@@ -19,6 +19,7 @@ from fastmcp.server.lifespan import lifespan  # noqa: E402
 from tei_mcp.download import ensure_odd_file  # noqa: E402
 from tei_mcp.parser import parse_odd  # noqa: E402
 from tei_mcp.store import OddStore, _build_deprecation_obj  # noqa: E402
+from tei_mcp.validator import TEIValidator  # noqa: E402
 
 
 @lifespan
@@ -34,8 +35,9 @@ async def app_lifespan(server):
         store.macro_count,
         store.module_count,
     )
+    validator = TEIValidator(store)
     try:
-        yield {"store": store}
+        yield {"store": store, "validator": validator}
     finally:
         logger.info("Server shutting down")
 
@@ -297,6 +299,61 @@ async def check_nesting(
     """
     store: OddStore = ctx.lifespan_context["store"]
     return store.check_nesting(child, parent, recursive=recursive)
+
+
+@mcp.tool()
+async def validate_document(
+    file_path: str,
+    authority_files: list[str] | None = None,
+    ctx: Context = None,
+) -> dict:
+    """Validate a TEI XML document against the TEI P5 specification.
+
+    Checks content model compliance, attribute validity, closed value lists,
+    empty required-content elements, reference integrity, and deprecation usage.
+
+    Args:
+        file_path: Path to the TEI XML file to validate.
+        authority_files: Optional list of XML file paths whose xml:id values
+            are included in reference integrity checks.
+
+    Returns a dict with 'issues' (list of validation issues), 'summary'
+    (counts by severity and rule), and 'limitations' (what was NOT checked).
+    """
+    validator: TEIValidator = ctx.lifespan_context["validator"]
+    return validator.validate_file(file_path, authority_files)
+
+
+@mcp.tool()
+async def validate_element(
+    element: str,
+    parent: str,
+    ctx: Context = None,
+) -> dict:
+    """Validate a single TEI element in context for incremental editing.
+
+    Accepts a raw XML snippet (e.g., '<add place="above">text</add>') or
+    a JSON-formatted string with keys 'name', 'attributes', 'children'.
+
+    Args:
+        element: XML snippet string or JSON string with element details.
+        parent: The parent element name (required for nesting validation).
+
+    Returns a dict with 'issues', 'summary', and 'limitations'.
+    """
+    import json
+
+    validator: TEIValidator = ctx.lifespan_context["validator"]
+    # Try JSON parse for structured input
+    if not element.strip().startswith("<"):
+        try:
+            element = json.loads(element)
+        except json.JSONDecodeError:
+            return {
+                "error": "element must be an XML snippet or JSON object "
+                "with 'name', 'attributes', 'children' keys"
+            }
+    return validator.validate_element(element, parent)
 
 
 def main():
