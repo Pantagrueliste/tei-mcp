@@ -18,7 +18,7 @@ from fastmcp.server.lifespan import lifespan  # noqa: E402
 
 from tei_mcp.download import ensure_odd_file  # noqa: E402
 from tei_mcp.parser import parse_odd  # noqa: E402
-from tei_mcp.store import OddStore  # noqa: E402
+from tei_mcp.store import OddStore, _build_deprecation_obj  # noqa: E402
 
 
 @lifespan
@@ -58,7 +58,27 @@ async def lookup_element(name: str, ctx: Context) -> dict:
             "error": f"Element '{name}' not found",
             "suggestions": store.suggest_names(name, "element"),
         }
-    return asdict(elem)
+    result = asdict(elem)
+    # Add element-level deprecation object
+    depr = _build_deprecation_obj(
+        result.pop("valid_until", ""), result.pop("deprecation_info", "")
+    )
+    if depr:
+        result["deprecation"] = depr
+    # Clean up and enrich attribute-level deprecation
+    for attr_dict in result.get("attributes", []):
+        vu = attr_dict.pop("valid_until", "")
+        di = attr_dict.pop("deprecation_info", "")
+        attr_depr = _build_deprecation_obj(vu, di)
+        if attr_depr:
+            attr_dict["deprecation"] = attr_depr
+    # Count deprecated attributes (including inherited)
+    all_attrs = store.resolve_attributes(elem.ident)
+    if "attributes" in all_attrs:
+        depr_count = sum(1 for a in all_attrs["attributes"] if "deprecation" in a)
+        if depr_count > 0:
+            result["deprecated_attribute_count"] = depr_count
+    return result
 
 
 @mcp.tool()
@@ -80,6 +100,13 @@ async def lookup_class(name: str, ctx: Context) -> dict:
         }
     result = asdict(cls_def)
     result["members"] = store.get_class_members(cls_def.ident)
+    # Enrich attribute-level deprecation in asdict output
+    for attr_dict in result.get("attributes", []):
+        vu = attr_dict.pop("valid_until", "")
+        di = attr_dict.pop("deprecation_info", "")
+        attr_depr = _build_deprecation_obj(vu, di)
+        if attr_depr:
+            attr_dict["deprecation"] = attr_depr
     return result
 
 

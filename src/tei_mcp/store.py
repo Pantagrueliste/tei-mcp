@@ -6,9 +6,23 @@ import difflib
 import re
 import xml.etree.ElementTree as ET
 from collections import deque
+from datetime import date
 from typing import TypeVar
 
 from tei_mcp.models import AttDef, ClassDef, ElementDef, MacroDef, ModuleDef
+
+
+def _build_deprecation_obj(valid_until: str, info: str) -> dict | None:
+    """Build deprecation dict or None if not deprecated."""
+    if not valid_until:
+        return None
+    expired = date.fromisoformat(valid_until) < date.today()
+    return {
+        "expired": expired,
+        "valid_until": valid_until,
+        "severity": "error" if expired else "warning",
+        "info": info,
+    }
 
 _ANY = "*"
 
@@ -247,15 +261,17 @@ class OddStore:
 
             for attr in cls_def.attributes:
                 if attr.ident not in seen_idents:
-                    inherited.append(
-                        {
-                            "name": attr.ident,
-                            "source": cls_ident,
-                            "datatype": attr.datatype,
-                            "values": list(attr.values),
-                            "closed": attr.closed,
-                        }
-                    )
+                    attr_dict = {
+                        "name": attr.ident,
+                        "source": cls_ident,
+                        "datatype": attr.datatype,
+                        "values": list(attr.values),
+                        "closed": attr.closed,
+                    }
+                    depr = _build_deprecation_obj(attr.valid_until, attr.deprecation_info)
+                    if depr:
+                        attr_dict["deprecation"] = depr
+                    inherited.append(attr_dict)
                     seen_idents.add(attr.ident)
 
             for super_cls in cls_def.classes:
@@ -279,6 +295,9 @@ class OddStore:
                 if cls_def and any(a.ident == attr.ident for a in cls_def.attributes):
                     entry["overrides"] = cls_ident
                     break
+            depr = _build_deprecation_obj(attr.valid_until, attr.deprecation_info)
+            if depr:
+                entry["deprecation"] = depr
             result_attrs.append(entry)
 
         result_attrs.extend(inherited)
