@@ -48,6 +48,8 @@ class TestAttDef:
             "datatype": "teidata.text",
             "values": (),
             "closed": False,
+            "valid_until": "",
+            "deprecation_info": "",
         }
 
     def test_closed_true_with_values(self):

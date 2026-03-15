@@ -65,7 +65,7 @@ def test_get_class_members(parsed_store):
     assert "p" in members
     assert "persName" in members
     assert "div" in members
-    assert len(members) == 12  # all elements with att.global
+    assert len(members) == 13  # all elements with att.global
 
 
 def test_get_class_members_with_subclass(parsed_store):

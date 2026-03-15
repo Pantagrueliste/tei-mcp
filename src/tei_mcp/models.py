@@ -12,6 +12,8 @@ class AttDef:
     datatype: str  # "teidata.enumerated", "ID", "" if absent
     values: tuple[str, ...]  # valItem idents from valList
     closed: bool  # True if valList type="closed"
+    valid_until: str = ""
+    deprecation_info: str = ""
 
 
 @dataclass(frozen=True)
@@ -25,6 +27,8 @@ class ElementDef:
     classes: tuple[str, ...]
     attributes: tuple[AttDef, ...]
     content_raw: str
+    valid_until: str = ""
+    deprecation_info: str = ""
 
 
 @dataclass(frozen=True)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -53,6 +54,54 @@ def _get_content_raw(el: ET.Element) -> str:
     return ""
 
 
+def _inner_xml(el: ET.Element) -> str:
+    """Extract inner XML content of an element, preserving inline markup.
+
+    Concatenates the element's text with serialised child elements,
+    stripping namespace prefixes so ``<ns0:gi>`` becomes ``<gi>``.
+    """
+    parts: list[str] = []
+    if el.text:
+        parts.append(el.text)
+    for child in el:
+        raw = ET.tostring(child, encoding="unicode")
+        # Strip namespace prefixes (ns0: or {uri} forms)
+        raw = re.sub(r"</?ns\d+:", lambda m: m.group(0)[:1] + ("/" if "/" in m.group(0) else ""), raw)
+        raw = re.sub(r'\s+xmlns:ns\d+="[^"]*"', "", raw)
+        parts.append(raw)
+    return "".join(parts).strip()
+
+
+def _extract_deprecation(el: ET.Element) -> tuple[str, str]:
+    """Extract deprecation metadata from an element.
+
+    Returns:
+        (valid_until, deprecation_info) where both are empty strings
+        for non-deprecated entities.
+    """
+    valid_until = el.get("validUntil", "")
+    if not valid_until:
+        return ("", "")
+
+    # Look for desc[@type='deprecationInfo'], preferring English
+    dep_desc = None
+    for desc_el in el.findall("tei:desc", NS):
+        if desc_el.get("type") == "deprecationInfo":
+            lang = desc_el.get(_XML_LANG)
+            if lang == "en" or lang is None:
+                dep_desc = desc_el
+                break
+            if dep_desc is None:
+                dep_desc = desc_el
+
+    if dep_desc is not None:
+        info = _inner_xml(dep_desc)
+    else:
+        info = f"Deprecated as of {valid_until}. No migration guidance available."
+
+    return (valid_until, info)
+
+
 def _parse_att_def(el: ET.Element) -> AttDef:
     """Parse an <attDef> element into an AttDef dataclass."""
     ident = el.get("ident", "")
@@ -75,7 +124,16 @@ def _parse_att_def(el: ET.Element) -> AttDef:
         values = tuple(vi.get("ident", "") for vi in vl.findall("tei:valItem", NS))
         closed = vl.get("type", "") == "closed"
 
-    return AttDef(ident=ident, desc=desc, datatype=datatype, values=values, closed=closed)
+    valid_until, deprecation_info = _extract_deprecation(el)
+    return AttDef(
+        ident=ident,
+        desc=desc,
+        datatype=datatype,
+        values=values,
+        closed=closed,
+        valid_until=valid_until,
+        deprecation_info=deprecation_info,
+    )
 
 
 def _parse_element_spec(el: ET.Element) -> ElementDef:
@@ -91,6 +149,7 @@ def _parse_element_spec(el: ET.Element) -> ElementDef:
         _parse_att_def(a) for a in el.findall("tei:attList//tei:attDef", NS)
     )
     content_raw = _get_content_raw(el)
+    valid_until, deprecation_info = _extract_deprecation(el)
     return ElementDef(
         ident=ident,
         module=module,
@@ -99,6 +158,8 @@ def _parse_element_spec(el: ET.Element) -> ElementDef:
         classes=classes,
         attributes=attributes,
         content_raw=content_raw,
+        valid_until=valid_until,
+        deprecation_info=deprecation_info,
     )
 
 
