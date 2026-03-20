@@ -85,16 +85,24 @@ def _get_validator(ctx: Context, use_odd: bool) -> TEIValidator:
 
 
 @mcp.tool()
-async def load_customisation(odd_path: str, ctx: Context) -> dict:
-    """Load a project ODD customisation file to constrain validation.
+async def load_customisation(
+    ctx: Context,
+    odd_path: str | None = None,
+    odd_content: str | None = None,
+) -> dict:
+    """Load a project ODD customisation to constrain validation.
 
-    Takes a file path to a TEI ODD customisation file, parses it, and creates
-    a constrained OddStore. Returns element count comparison (customised vs base).
+    Provide either odd_path (a local file path) or odd_content (the raw XML
+    string of the ODD file). When using a remote server, pass odd_content
+    directly since the server cannot access your local filesystem.
+
+    Parses the ODD and creates a constrained OddStore. Returns element count
+    comparison (customised vs base).
     Set use_odd=True on other tools to query the customised schema.
     """
     base_store = ctx.lifespan_context["store"]
     try:
-        custom_store = apply_customisation(base_store, odd_path)
+        custom_store = apply_customisation(base_store, odd_path=odd_path, odd_content=odd_content)
     except (ValueError, FileNotFoundError, ET.ParseError) as e:
         return {"error": str(e)}
     custom_validator = TEIValidator(custom_store)
@@ -429,10 +437,12 @@ async def check_nesting(
 
 @mcp.tool()
 async def validate_document(
-    file_path: str,
+    ctx: Context,
+    file_path: str | None = None,
+    xml_content: str | None = None,
     authority_files: list[str] | None = None,
+    authority_contents: list[str] | None = None,
     use_odd: bool = False,
-    ctx: Context = None,
 ) -> dict:
     """Validate a TEI XML document against the TEI P5 specification.
 
@@ -440,19 +450,26 @@ async def validate_document(
     empty required-content elements, reference integrity, and deprecation usage.
     Set use_odd=True to query the customised schema.
 
-    Args:
-        file_path: Path to the TEI XML file to validate.
-        authority_files: Optional list of XML file paths whose xml:id values
-            are included in reference integrity checks.
+    Provide either file_path (a local file path) or xml_content (the raw XML
+    string). When using a remote server, pass xml_content directly since the
+    server cannot access your local filesystem.
+
+    Authority files can likewise be provided as local file paths
+    (authority_files) or as raw XML strings (authority_contents).
 
     Returns a dict with 'issues' (list of validation issues), 'summary'
     (counts by severity and rule), and 'limitations' (what was NOT checked).
     """
     try:
         validator: TEIValidator = _get_validator(ctx, use_odd)
-    except ValueError as e:
+        return validator.validate_file(
+            path=file_path,
+            xml_content=xml_content,
+            authority_files=authority_files,
+            authority_contents=authority_contents,
+        )
+    except (ValueError, FileNotFoundError) as e:
         return {"error": str(e)}
-    return validator.validate_file(file_path, authority_files)
 
 
 @mcp.tool()

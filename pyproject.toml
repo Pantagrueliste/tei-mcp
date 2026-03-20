@@ -1,6 +1,6 @@
 [project]
 name = "tei-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP server for querying the TEI P5 ODD specification"
 readme = "README.md"
 license = "MIT"
