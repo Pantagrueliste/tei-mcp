@@ -26,6 +26,7 @@ An [MCP](https://modelcontextprotocol.io) server that helps AI agents read and w
 - **Regex search** across all entity types (elements, classes, macros, modules)
 - **Deprecation awareness** with validUntil dates and replacement suggestions
 - **Attribute suggestion** by intent description (keyword matching against attribute descriptions)
+- **Local and remote usage**: all tools work both when the server runs on your machine and when it runs on a remote server
 
 ## Requirements
 
@@ -58,7 +59,9 @@ On first run, the server downloads `p5subset.xml` from the TEI website (~5 MB) a
 
 ## Usage
 
-tei-mcp works with any MCP-compatible client. Add the following to your client's MCP server configuration:
+### Local server (stdio)
+
+When you run tei-mcp on your own machine, it communicates over stdio. Add the following to your client's MCP server configuration:
 
 ```json
 {
@@ -81,13 +84,17 @@ Where this file lives depends on your client:
 | Windsurf | `~/.codeium/windsurf/mcp_config.json` |
 | Other clients | Consult your client's MCP documentation |
 
-### Standalone
+### Remote server (HTTP)
+
+tei-mcp can also run as a remote HTTP server, so you don't need to install anything locally. Run it with:
 
 ```bash
-uvx tei-mcp
+fastmcp run tei_mcp/server.py:mcp --transport streamable-http --host 0.0.0.0 --port 8000
 ```
 
-The server communicates over stdio using the MCP protocol.
+Then point your MCP client at the server URL (e.g., `http://your-server:8000/mcp`).
+
+When the server runs remotely, it cannot access files on your computer. Tools that work with documents (`validate_document`, `load_customisation`) accept the XML content directly as a string, so the AI agent can read your local file and send its content to the remote server. See [Working with documents](#working-with-documents) below.
 
 ## Tools
 
@@ -105,19 +112,45 @@ The server communicates over stdio using the MCP protocol.
 | `check_nesting` | Check if an element can appear inside another |
 | `check_nesting_batch` | Check multiple nesting pairs in one call |
 | `suggest_attribute` | Find relevant attributes by intent description |
-| `validate_document` | Validate a TEI XML file against the spec |
+| `validate_document` | Validate a TEI XML document against the spec |
 | `validate_element` | Validate a single element in context |
-| `load_customisation` | Load an ODD customisation file |
+| `load_customisation` | Load an ODD customisation |
 | `unload_customisation` | Clear the loaded customisation |
 
 Most tools accept `use_odd=True` to query the customised schema instead of the full TEI P5.
+
+## Working with documents
+
+`validate_document` and `load_customisation` both need access to XML files. They support two ways of receiving them:
+
+- **By file path** (`file_path` / `odd_path`): the server opens the file from disk. This is the simplest option when the server runs on your own machine.
+- **By content** (`xml_content` / `odd_content`): the XML is passed directly as a string. This is how remote servers work — the AI agent reads your local file and sends its content to the server.
+
+You don't need to choose or configure anything. When you ask the AI agent to validate a document, it will automatically use the right approach depending on whether the server is local or remote.
+
+### Examples
+
+Local server (file path):
+```
+validate_document(file_path="/path/to/my-document.xml")
+load_customisation(odd_path="/path/to/my-project.odd")
+```
+
+Remote server (content):
+```
+validate_document(xml_content="<TEI xmlns='...'>...</TEI>")
+load_customisation(odd_content="<TEI xmlns='...'>...</TEI>")
+```
+
+`validate_document` also supports authority files (for reference integrity checks) in both forms: `authority_files` for local paths, `authority_contents` for XML strings.
 
 ## ODD Customisation
 
 Load a project-specific ODD file to constrain the schema:
 
 ```
-1. Call load_customisation("/path/to/my-project.odd")
+1. Call load_customisation(odd_path="/path/to/my-project.odd")
+   — or load_customisation(odd_content="<TEI>...</TEI>") for remote servers
 2. Use use_odd=True on subsequent tool calls
 3. Call unload_customisation() to revert to the full spec
 ```
