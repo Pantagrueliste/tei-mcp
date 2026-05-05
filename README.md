@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://doi.org/10.5281/zenodo.19039570"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19039570-blue" alt="DOI"></a>
+  <a href="https://doi.org/10.5281/zenodo.19039569"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19039569-blue" alt="DOI"></a>
   <a href="https://pypi.org/project/tei-mcp/"><img src="https://img.shields.io/pypi/v/tei-mcp" alt="PyPI version"></a>
   <a href="https://github.com/Pantagrueliste/tei-mcp/blob/master/LICENSE"><img src="https://img.shields.io/pypi/l/tei-mcp" alt="License"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-green" alt="MCP compatible"></a>
