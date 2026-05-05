@@ -106,6 +106,37 @@ def test_strip_ns_attr():
     assert _strip_ns_attr("type") == "type"
 
 
+def test_validate_file_xml_content(parsed_store):
+    """validate_file accepts xml_content string instead of a file path."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    result = v.validate_file(xml_content=VALID_TEI)
+
+    assert isinstance(result, dict)
+    assert "issues" in result
+    assert "summary" in result
+    assert "limitations" in result
+
+
+def test_validate_file_rejects_both(parsed_store, valid_tei_path):
+    """validate_file raises ValueError when both path and xml_content given."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    with pytest.raises(ValueError, match="not both"):
+        v.validate_file(path=str(valid_tei_path), xml_content=VALID_TEI)
+
+
+def test_validate_file_rejects_neither(parsed_store):
+    """validate_file raises ValueError when neither path nor xml_content given."""
+    from tei_mcp.validator import TEIValidator
+
+    v = TEIValidator(parsed_store)
+    with pytest.raises(ValueError, match="Provide either"):
+        v.validate_file()
+
+
 def test_validate_file_parses_with_line_numbers(parsed_store, valid_tei_path):
     """lxml parsing preserves sourceline on elements (not None)."""
     from lxml import etree

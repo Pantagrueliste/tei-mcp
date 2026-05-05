@@ -55,17 +55,35 @@ class TEIValidator:
         self.store = store
 
     def validate_file(
-        self, path: str, authority_files: list[str] | None = None
+        self,
+        path: str | None = None,
+        authority_files: list[str] | None = None,
+        xml_content: str | None = None,
+        authority_contents: list[str] | None = None,
     ) -> dict:
-        """Parse a TEI XML file with lxml and return validation results.
+        """Parse a TEI XML document and return validation results.
+
+        Provide either ``path`` (a file path on disk) or ``xml_content``
+        (the raw XML string). Exactly one must be given.
+
+        Authority files can likewise be provided as file paths
+        (``authority_files``) or as raw XML strings (``authority_contents``).
 
         Returns a dict with:
         - issues: list of issue dicts (severity, line, element, message, rule)
         - summary: dict with total, by_severity, by_rule counts
         - limitations: dict listing what is NOT checked
         """
-        tree = etree.parse(path)
-        root = tree.getroot()
+        if path and xml_content:
+            raise ValueError("Provide either path or xml_content, not both.")
+        if not path and not xml_content:
+            raise ValueError("Provide either path or xml_content.")
+
+        if xml_content:
+            root = etree.fromstring(xml_content.encode("utf-8"))
+        else:
+            tree = etree.parse(path)
+            root = tree.getroot()
         issues: list[dict] = []
 
         # Collect xml:id values for reference integrity
@@ -74,6 +92,10 @@ class TEIValidator:
             for af in authority_files:
                 af_tree = etree.parse(af)
                 id_set |= self._collect_ids(af_tree.getroot())
+        if authority_contents:
+            for ac in authority_contents:
+                af_root = etree.fromstring(ac.encode("utf-8"))
+                id_set |= self._collect_ids(af_root)
 
         # Walk all elements
         for elem in root.iter(etree.Element):

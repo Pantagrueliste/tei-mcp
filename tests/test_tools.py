@@ -373,7 +373,7 @@ async def test_validate_document_tool(ctx, tmp_path):
     p = tmp_path / "test.xml"
     p.write_text(tei_xml, encoding="utf-8")
 
-    result = await validate_document(str(p), ctx=ctx)
+    result = await validate_document(file_path=str(p), ctx=ctx)
     assert isinstance(result, dict)
     assert "issues" in result
     assert "summary" in result
@@ -423,7 +423,7 @@ def odd_ctx(parsed_store):
 @pytest.mark.asyncio
 async def test_load_customisation(odd_ctx):
     """load_customisation with valid ODD path succeeds, returns element count."""
-    result = await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    result = await load_customisation(odd_path=ODD_FIXTURE, ctx=odd_ctx)
     assert isinstance(result, dict)
     assert result["status"] == "loaded"
     assert "elements" in result
@@ -434,7 +434,7 @@ async def test_load_customisation(odd_ctx):
 @pytest.mark.asyncio
 async def test_unload_customisation(odd_ctx):
     """After loading, unload_customisation clears the custom store."""
-    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    await load_customisation(odd_path=ODD_FIXTURE, ctx=odd_ctx)
     result = await unload_customisation(ctx=odd_ctx)
     assert result["status"] == "unloaded"
     assert odd_ctx.lifespan_context["custom_store"] is None
@@ -444,7 +444,7 @@ async def test_unload_customisation(odd_ctx):
 @pytest.mark.asyncio
 async def test_use_odd_flag(odd_ctx):
     """lookup_element with use_odd=True after loading ODD uses constrained store."""
-    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    await load_customisation(odd_path=ODD_FIXTURE, ctx=odd_ctx)
     # note was deleted in the ODD customisation
     result = await lookup_element("note", odd_ctx, use_odd=True)
     assert "error" in result
@@ -461,7 +461,7 @@ async def test_use_odd_without_load(odd_ctx):
 @pytest.mark.asyncio
 async def test_use_odd_false_ignores_custom(odd_ctx):
     """After loading ODD, lookup_element with use_odd=False still returns deleted element."""
-    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
+    await load_customisation(odd_path=ODD_FIXTURE, ctx=odd_ctx)
     # note was deleted in the ODD, but use_odd=False should still find it in base
     result = await lookup_element("note", odd_ctx, use_odd=False)
     assert "error" not in result
@@ -481,8 +481,8 @@ async def test_validate_document_use_odd(odd_ctx, tmp_path):
     )
     p = tmp_path / "odd_test.xml"
     p.write_text(tei_xml, encoding="utf-8")
-    await load_customisation(ODD_FIXTURE, ctx=odd_ctx)
-    result = await validate_document(str(p), ctx=odd_ctx, use_odd=True)
+    await load_customisation(odd_path=ODD_FIXTURE, ctx=odd_ctx)
+    result = await validate_document(file_path=str(p), ctx=odd_ctx, use_odd=True)
     assert isinstance(result, dict)
     assert "issues" in result
     assert "summary" in result
@@ -490,3 +490,62 @@ async def test_validate_document_use_odd(odd_ctx, tmp_path):
     # Verify it used the customised validator (different store)
     custom_validator = odd_ctx.lifespan_context["custom_validator"]
     assert custom_validator.store.element_count < odd_ctx.lifespan_context["store"].element_count
+
+
+# ---------------------------------------------------------------------------
+# xml_content support (remote server usage)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_validate_document_xml_content(ctx):
+    """validate_document accepts xml_content string instead of file_path."""
+    tei_xml = (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0">'
+        "<teiHeader><fileDesc><titleStmt><title>T</title></titleStmt>"
+        "<publicationStmt><p>T</p></publicationStmt>"
+        "<sourceDesc><p>T</p></sourceDesc></fileDesc></teiHeader>"
+        "<text><body><p>Hello</p></body></text>"
+        "</TEI>"
+    )
+    result = await validate_document(xml_content=tei_xml, ctx=ctx)
+    assert isinstance(result, dict)
+    assert "issues" in result
+    assert "summary" in result
+    assert "limitations" in result
+
+
+@pytest.mark.asyncio
+async def test_validate_document_rejects_both(ctx):
+    """validate_document returns error when both file_path and xml_content given."""
+    result = await validate_document(
+        file_path="/tmp/fake.xml", xml_content="<TEI/>", ctx=ctx
+    )
+    assert "error" in result
+
+
+@pytest.mark.asyncio
+async def test_validate_document_rejects_neither(ctx):
+    """validate_document returns error when neither file_path nor xml_content given."""
+    result = await validate_document(ctx=ctx)
+    assert "error" in result
+
+
+@pytest.mark.asyncio
+async def test_load_customisation_odd_content(odd_ctx):
+    """load_customisation accepts odd_content string instead of odd_path."""
+    odd_xml = Path(ODD_FIXTURE).read_text(encoding="utf-8")
+    result = await load_customisation(odd_content=odd_xml, ctx=odd_ctx)
+    assert isinstance(result, dict)
+    assert result["status"] == "loaded"
+    assert result["elements"] < result["base_elements"]
+
+
+@pytest.mark.asyncio
+async def test_load_customisation_rejects_both(odd_ctx):
+    """load_customisation returns error when both odd_path and odd_content given."""
+    odd_xml = Path(ODD_FIXTURE).read_text(encoding="utf-8")
+    result = await load_customisation(
+        odd_path=ODD_FIXTURE, odd_content=odd_xml, ctx=odd_ctx
+    )
+    assert "error" in result

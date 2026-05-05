@@ -17,26 +17,43 @@ _ELEMENT_SPEC_TAG = f"{{{_TEI_NS}}}elementSpec"
 _ATT_DEF = f"{{{_TEI_NS}}}attDef"
 
 
-def apply_customisation(base_store: OddStore, odd_path: str) -> OddStore:
-    """Parse an ODD customisation file and return a constrained OddStore.
+def apply_customisation(
+    base_store: OddStore,
+    odd_path: str | None = None,
+    odd_content: str | None = None,
+) -> OddStore:
+    """Parse an ODD customisation and return a constrained OddStore.
 
     The base store is never mutated. A new OddStore is constructed from
     deep copies of the base store's dicts, filtered and modified according
     to the ODD's moduleRef and elementSpec directives.
 
+    Provide either ``odd_path`` (a file path on disk) or ``odd_content``
+    (the raw XML string). Exactly one must be given.
+
     Args:
         base_store: The full TEI P5 OddStore to constrain.
         odd_path: Path to the ODD customisation XML file.
+        odd_content: Raw XML string of the ODD customisation.
 
     Returns:
         A new OddStore with only the elements allowed by the customisation,
         and with attribute modifications applied.
 
     Raises:
-        ValueError: If the ODD file contains no schemaSpec or no moduleRef elements.
+        ValueError: If the ODD file contains no schemaSpec or no moduleRef elements,
+            or if neither/both of odd_path and odd_content are provided.
     """
-    tree = ET.parse(odd_path)
-    root = tree.getroot()
+    if odd_path and odd_content:
+        raise ValueError("Provide either odd_path or odd_content, not both.")
+    if not odd_path and not odd_content:
+        raise ValueError("Provide either odd_path or odd_content.")
+
+    if odd_content:
+        root = ET.fromstring(odd_content)
+    else:
+        tree = ET.parse(odd_path)
+        root = tree.getroot()
 
     # Find schemaSpec anywhere in the tree (ODD files are TEI documents)
     schema_spec = None
