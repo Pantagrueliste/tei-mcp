@@ -18,10 +18,13 @@ from fastmcp.server.lifespan import lifespan  # noqa: E402
 
 import xml.etree.ElementTree as ET  # noqa: E402
 
+import os  # noqa: E402
+
 from tei_mcp import __version__  # noqa: E402
 from tei_mcp.customisation import apply_customisation  # noqa: E402
 from tei_mcp.download import ensure_odd_file  # noqa: E402
 from tei_mcp.parser import parse_odd  # noqa: E402
+from tei_mcp.span_locked import SpanStore  # noqa: E402
 from tei_mcp.store import OddStore, _build_deprecation_obj  # noqa: E402
 from tei_mcp.validator import TEIValidator  # noqa: E402
 
@@ -50,12 +53,19 @@ async def app_lifespan(server):
     store = parse_odd(odd_path)
     _print_banner(store)
     validator = TEIValidator(store)
+    span_root = os.environ.get(
+        "TEI_MCP_SPAN_SOURCE_ROOT",
+        str(__import__("pathlib").Path.cwd() / "span_sources"),
+    )
+    span_store = SpanStore(source_root=span_root)
+    logger.info("Span-locked source root: %s", span_root)
     try:
         yield {
             "store": store,
             "validator": validator,
             "custom_store": None,
             "custom_validator": None,
+            "span_store": span_store,
         }
     finally:
         logger.info("Server shutting down")
@@ -490,6 +500,145 @@ async def validate_element(
                 "with 'name', 'attributes', 'children' keys"
             }
     return validator.validate_element(element, parent)
+
+
+# --- Span-locked composition tools ---
+
+def _get_span_store(ctx: Context) -> SpanStore:
+    span_store = ctx.lifespan_context.get("span_store")
+    if span_store is None:
+        raise ValueError(
+            "Span-locked store not initialised. Set TEI_MCP_SPAN_SOURCE_ROOT "
+            "to a directory containing source plaintext files (.txt) and "
+            "restart the server."
+        )
+    return span_store
+
+
+@mcp.tool()
+async def get_source(document_id: str, ctx: Context = None) -> dict:
+    """Return source plaintext for a span-locked document by stable ID.
+
+    The server reads the source from `TEI_MCP_SPAN_SOURCE_ROOT/<id>.txt`
+    (or any matching extension). Plaintext serves as the immutable body
+    text the model annotates over via tag_span; compose() reassembles
+    the final TEI by interleaving recorded tags with this source.
+
+    Args:
+        document_id: Stable ID for the document. Filename stem with no
+                     extension; resolved against the configured source root.
+
+    Returns dict with 'document_id', 'length' (chars), and 'text'.
+    """
+    try:
+        store = _get_span_store(ctx)
+        text = store.get_source(document_id)
+    except (FileNotFoundError, ValueError) as e:
+        return {"error": str(e)}
+    return {"document_id": document_id, "length": len(text), "text": text}
+
+
+@mcp.tool()
+async def tag_span(
+    document_id: str,
+    start: int,
+    end: int,
+    element_path: str,
+    attrs: dict = None,
+    ctx: Context = None,
+) -> dict:
+    """Record a TEI tag spanning [start, end) in a span-locked document.
+
+    The model emits tags as offset+element tuples over the source plaintext.
+    Tags are stored per document until compose() is invoked; the source
+    text itself is never modified.
+
+    Args:
+        document_id: Stable ID of the document (must have been registered
+                     via get_source first or be reachable by source_root).
+        start: Inclusive char offset (0-based) in the source text.
+        end: Exclusive char offset (start <= end <= len(source)).
+        element_path: Slash-separated path documenting nesting context.
+                      Only the LAST segment becomes the element's local
+                      name. E.g. "TEI/text/body/p/persName" → <persName>.
+        attrs: Optional dict of attribute name → value. xml:* attrs are
+               supported via the "xml:..." key prefix.
+
+    Returns the recorded tag dict, or an error dict on validation failure.
+    """
+    try:
+        store = _get_span_store(ctx)
+        rec = store.tag_span(document_id, start, end, element_path, attrs or {})
+    except (FileNotFoundError, ValueError) as e:
+        return {"error": str(e)}
+    return rec
+
+
+@mcp.tool()
+async def compose(
+    document_id: str,
+    wrap_in_body: bool = True,
+    ctx: Context = None,
+) -> dict:
+    """Emit final TEI by interleaving recorded tags with source text.
+
+    Body-text invariant: the rendered TEI's flat text content equals the
+    source plaintext byte-for-byte by construction. compose() raises if
+    the recorded tags would violate this invariant or contain crossings
+    (which are invalid XML).
+
+    Args:
+        document_id: Stable ID of the document.
+        wrap_in_body: If True (default), wrap result as a <body> fragment.
+                      If False, return tagged source text under a synthetic
+                      compose root (intended for sub-fragment composition).
+
+    Returns dict with 'document_id', 'tei' (string), and 'tag_count'.
+    """
+    try:
+        store = _get_span_store(ctx)
+        tei = store.compose(document_id, wrap_in_body=wrap_in_body)
+        tags = store.list_tags(document_id)
+    except (FileNotFoundError, ValueError, RuntimeError) as e:
+        return {"error": str(e)}
+    return {
+        "document_id": document_id,
+        "tei": tei,
+        "tag_count": len(tags),
+    }
+
+
+@mcp.tool()
+async def list_tags(document_id: str, ctx: Context = None) -> dict:
+    """List all tags currently recorded for a span-locked document.
+
+    Returns dict with 'document_id', 'tag_count', 'tags' (list of dicts).
+    """
+    try:
+        store = _get_span_store(ctx)
+        tags = store.list_tags(document_id)
+    except (FileNotFoundError, ValueError) as e:
+        return {"error": str(e)}
+    return {
+        "document_id": document_id,
+        "tag_count": len(tags),
+        "tags": tags,
+    }
+
+
+@mcp.tool()
+async def reset_tags(document_id: str, ctx: Context = None) -> dict:
+    """Clear all recorded tags for a span-locked document.
+
+    The source text is preserved; only the in-memory tag list is cleared.
+    Useful for retry / fresh-start workflows during a single session.
+    """
+    try:
+        store = _get_span_store(ctx)
+        store.reset(document_id)
+    except FileNotFoundError as e:
+        return {"error": str(e)}
+    return {"document_id": document_id, "ok": True}
 
 
 def main():
